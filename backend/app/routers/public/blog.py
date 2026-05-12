@@ -46,6 +46,7 @@ def get_post(slug: str, db: Session = Depends(get_db)):
     obj = svc.get_post_by_slug(db, slug)
     if not obj or not obj.published:
         raise HTTPException(status_code=404, detail="Post not found")
+    svc.increment_views(db, obj)
     return obj
 
 

@@ -1,12 +1,18 @@
+from datetime import datetime, timezone
+
 from sqlalchemy.orm import Session
 
-from app.models.post import Category, Comment, Post, Tag
+from app.models.post import Category, Comment, Post, PostLog, Tag
 from app.schemas.blog import (
     CategoryCreate, CategoryUpdate,
     CommentCreate, CommentUpdate,
     PostCreate, PostUpdate,
     TagCreate, TagUpdate,
 )
+
+
+def _add_log(db: Session, post_id: int, action: str, note: str | None = None) -> None:
+    db.add(PostLog(post_id=post_id, action=action, note=note))
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -105,12 +111,15 @@ def get_posts(
     db: Session,
     *,
     published_only: bool = False,
+    include_deleted: bool = False,
     category_slug: str | None = None,
     tag_slug: str | None = None,
     page: int = 1,
     page_size: int = 10,
 ) -> tuple[int, list[Post]]:
     q = db.query(Post)
+    if not include_deleted:
+        q = q.filter(Post.deleted_at.is_(None))
     if published_only:
         q = q.filter(Post.published.is_(True))
     if category_slug:
@@ -127,7 +136,12 @@ def get_post(db: Session, post_id: int) -> Post | None:
 
 
 def get_post_by_slug(db: Session, slug: str) -> Post | None:
-    return db.query(Post).filter(Post.slug == slug).first()
+    return db.query(Post).filter(Post.slug == slug, Post.deleted_at.is_(None)).first()
+
+
+def increment_views(db: Session, post: Post) -> None:
+    post.views += 1
+    db.commit()
 
 
 def create_post(db: Session, data: PostCreate) -> Post:
@@ -137,6 +151,8 @@ def create_post(db: Session, data: PostCreate) -> Post:
     if tag_ids:
         obj.tags = _get_tags_by_ids(db, tag_ids)
     db.add(obj)
+    db.flush()
+    _add_log(db, obj.id, "published" if obj.published else "draft")
     db.commit()
     db.refresh(obj)
     return obj
@@ -148,22 +164,42 @@ def update_post(db: Session, post_id: int, data: PostUpdate) -> Post | None:
         return None
     update_data = data.model_dump(exclude_unset=True)
     tag_ids = update_data.pop("tag_ids", None)
+    old_published = obj.published
     for field, value in update_data.items():
         setattr(obj, field, value)
     if tag_ids is not None:
         obj.tags = _get_tags_by_ids(db, tag_ids)
+    if "published" in update_data and update_data["published"] != old_published:
+        _add_log(db, obj.id, "published" if obj.published else "draft")
     db.commit()
     db.refresh(obj)
     return obj
 
 
-def delete_post(db: Session, post_id: int) -> bool:
-    obj = get_post(db, post_id)
+def soft_delete_post(db: Session, post_id: int, note: str | None = None) -> Post | None:
+    obj = db.query(Post).filter(Post.id == post_id, Post.deleted_at.is_(None)).first()
     if not obj:
-        return False
-    db.delete(obj)
+        return None
+    obj.deleted_at = datetime.now(timezone.utc)
+    _add_log(db, obj.id, "deleted", note)
     db.commit()
-    return True
+    db.refresh(obj)
+    return obj
+
+
+def restore_post(db: Session, post_id: int, note: str | None = None) -> Post | None:
+    obj = db.query(Post).filter(Post.id == post_id, Post.deleted_at.isnot(None)).first()
+    if not obj:
+        return None
+    obj.deleted_at = None
+    _add_log(db, obj.id, "restored", note)
+    db.commit()
+    db.refresh(obj)
+    return obj
+
+
+def get_post_logs(db: Session, post_id: int) -> list[PostLog]:
+    return db.query(PostLog).filter(PostLog.post_id == post_id).order_by(PostLog.operated_at).all()
 
 
 # ── Comment ───────────────────────────────────────────────────────────────────

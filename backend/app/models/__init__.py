@@ -1,3 +1,3 @@
-from app.models.post import Category, Comment, Post, Tag, post_tags
+from app.models.post import Category, Comment, Post, PostLog, Tag, post_tags
 
-__all__ = ["Category", "Comment", "Post", "Tag", "post_tags"]
+__all__ = ["Category", "Comment", "Post", "PostLog", "Tag", "post_tags"]

@@ -56,6 +56,7 @@ class PostBase(BaseModel):
     slug: str
     summary: str | None = None
     content: str
+    cover_image: str | None = None
     published: bool = False
     category_id: int | None = None
 
@@ -69,6 +70,7 @@ class PostUpdate(BaseModel):
     slug: str | None = None
     summary: str | None = None
     content: str | None = None
+    cover_image: str | None = None
     published: bool | None = None
     category_id: int | None = None
     tag_ids: list[int] | None = None
@@ -76,6 +78,8 @@ class PostUpdate(BaseModel):
 
 class PostOut(PostBase):
     id: int
+    views: int
+    deleted_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
     category: CategoryOut | None = None
@@ -85,16 +89,28 @@ class PostOut(PostBase):
 
 
 class PostSummaryOut(BaseModel):
-    """Lightweight post representation for list endpoints (no full content)."""
     id: int
     title: str
     slug: str
     summary: str | None = None
+    cover_image: str | None = None
     published: bool
+    views: int
+    deleted_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
     category: CategoryOut | None = None
     tags: list[TagOut] = []
+
+    model_config = {"from_attributes": True}
+
+
+class PostLogOut(BaseModel):
+    id: int
+    post_id: int
+    action: str
+    operated_at: datetime
+    note: str | None = None
 
     model_config = {"from_attributes": True}
 

@@ -179,3 +179,88 @@ def test_create_and_approve_comment(client, auth_headers):
     # Now visible publicly
     resp = client.get("/api/posts/post/comments")
     assert len(resp.json()) == 1
+
+
+# ── Soft Delete & Restore ─────────────────────────────────────────────────────
+
+def test_soft_delete_hides_post_publicly(client, auth_headers):
+    client.post(
+        "/admin/posts",
+        json={"title": "To Delete", "slug": "to-delete", "content": "bye", "published": True},
+        headers=auth_headers,
+    )
+    # 公开可见
+    assert client.get("/api/posts/to-delete").status_code == 200
+
+    # 软删除
+    resp = client.delete("/admin/posts/1", headers=auth_headers)
+    assert resp.status_code == 200
+
+    # 公开不可见
+    assert client.get("/api/posts/to-delete").status_code == 404
+
+
+def test_restore_post(client, auth_headers):
+    client.post(
+        "/admin/posts",
+        json={"title": "Restore Me", "slug": "restore-me", "content": "x", "published": True},
+        headers=auth_headers,
+    )
+    post_id = client.get("/admin/posts?include_deleted=true", headers=auth_headers).json()["items"][0]["id"]
+
+    client.delete(f"/admin/posts/{post_id}", headers=auth_headers)
+    assert client.get("/api/posts/restore-me").status_code == 404
+
+    resp = client.post(f"/admin/posts/{post_id}/restore", headers=auth_headers)
+    assert resp.status_code == 200
+    assert client.get("/api/posts/restore-me").status_code == 200
+
+
+def test_post_logs_recorded(client, auth_headers):
+    client.post(
+        "/admin/posts",
+        json={"title": "Log Test", "slug": "log-test", "content": "x", "published": True},
+        headers=auth_headers,
+    )
+    post_id = client.get("/admin/posts", headers=auth_headers).json()["items"][0]["id"]
+
+    client.delete(f"/admin/posts/{post_id}", headers=auth_headers)
+    client.post(f"/admin/posts/{post_id}/restore", headers=auth_headers)
+
+    logs = client.get(f"/admin/posts/{post_id}/logs", headers=auth_headers).json()
+    actions = [l["action"] for l in logs]
+    assert "published" in actions
+    assert "deleted" in actions
+    assert "restored" in actions
+
+
+# ── Views ─────────────────────────────────────────────────────────────────────
+
+def test_views_increment_on_get(client, auth_headers):
+    client.post(
+        "/admin/posts",
+        json={"title": "View Test", "slug": "view-test", "content": "x", "published": True},
+        headers=auth_headers,
+    )
+    client.get("/api/posts/view-test")
+    client.get("/api/posts/view-test")
+    resp = client.get("/api/posts/view-test")
+    assert resp.json()["views"] == 3
+
+
+# ── Cover Image ───────────────────────────────────────────────────────────────
+
+def test_cover_image_stored(client, auth_headers):
+    resp = client.post(
+        "/admin/posts",
+        json={
+            "title": "With Cover",
+            "slug": "with-cover",
+            "content": "x",
+            "published": True,
+            "cover_image": "https://example.com/cover.jpg",
+        },
+        headers=auth_headers,
+    )
+    assert resp.status_code == 201
+    assert resp.json()["cover_image"] == "https://example.com/cover.jpg"
