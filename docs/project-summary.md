@@ -136,8 +136,8 @@ uvicorn app.main:app --reload --port 8001
 # 前端（终端 2）
 cd frontend
 npm run dev
-# 博客首页：http://localhost:5174
-# 管理后台：http://localhost:5174/admin/login
+# 博客首页：http://localhost:6006
+# 管理后台：http://localhost:6006/admin/login
 ```
 
 **默认管理员账号：** `admin` / `changeme123`

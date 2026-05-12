@@ -5,6 +5,7 @@ import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 
 export default defineConfig({
+  server: { port: 6006 },
   plugins: [
     vue(),
     AutoImport({ resolvers: [ElementPlusResolver()] }),
