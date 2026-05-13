@@ -57,8 +57,10 @@ PostCard 循环渲染文章卡片
 - [27 管理后台链路串讲：登录与发文](27-admin-auth-flow.md)
 - [28 Markdown 编辑与渲染](28-markdown.md)
 - [29 Element Plus 与按需自动导入](29-element-plus.md)
-- [30 JavaScript 常用语法：模板字符串 / 可选链 / 解构赋值](30-js-syntax.md)
+- [30 JavaScript 常用语法：箭头函数 / 模板字符串 / 可选链 / 解构赋值](30-js-syntax.md)
 - [31 懒加载：动态 import](31-lazy-loading.md)
+- [32 Python 异常处理与 HTTPException](32-python-exceptions.md)
+- [33 Python 类型注解](33-python-type-hints.md)
 
 ## 阅读方式
 

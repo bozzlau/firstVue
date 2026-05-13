@@ -1,6 +1,68 @@
-# 30 · JavaScript 常用语法：模板字符串 / 可选链 / 解构赋值
+# 30 · JavaScript 常用语法：箭头函数 / 模板字符串 / 可选链 / 解构赋值
 
-这三个语法在项目里大量出现，但没有单独讲过。
+这几个语法在项目里大量出现，但没有单独讲过。
+
+---
+
+## 🧩 箭头函数 `=>`（api/posts.js 第 5 行）
+
+箭头函数是普通函数的简写语法，`=>` 是它的标志。
+
+```javascript
+// 普通函数
+function add(a, b) {
+  return a + b
+}
+
+// 箭头函数，完全等价
+const add = (a, b) => {
+  return a + b
+}
+
+// 只有一行 return 时，可以省略花括号和 return
+const add = (a, b) => a + b
+```
+
+**项目里的三种形态：**
+
+```javascript
+// 形态 1：完整写法，多行逻辑，需要显式 return
+client.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token')
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+  return config
+})
+
+// 形态 2：单行，省略花括号和 return，直接返回表达式
+export const getPosts = (params) =>
+  client.get('/api/posts', { params }).then((r) => r.data)
+
+// 形态 3：单参数时括号可以省略
+.then((r) => r.data)   // 有括号
+.then(r => r.data)     // 省略括号，完全等价
+```
+
+**最常见的用法：作为参数传给另一个函数**
+
+```javascript
+// .then() 接收一个函数
+client.get('/api/posts').then((r) => r.data)
+
+// .filter() 对每个元素执行，返回 true 保留
+[1, 2, 3, 4].filter((n) => n > 2)   // → [3, 4]
+
+// .map() 对每个元素转换
+[1, 2, 3].map((n) => n * 2)         // → [2, 4, 6]
+```
+
+| 写法 | 说明 |
+|------|------|
+| `(a, b) => { return a + b }` | 完整写法 |
+| `(a, b) => a + b` | 单行，省略花括号和 return |
+| `a => a * 2` | 单参数，省略括号 |
+| `() => import(...)` | 无参数，括号不能省 |
 
 ---
 
@@ -122,6 +184,7 @@ const { data: loginResult } = await client.post(...)
 
 | 语法 | 记住 |
 |------|------|
+| `(a, b) => 表达式` | 箭头函数，普通函数的简写 |
 | `` `${变量}` `` | 模板字符串，反引号包裹，`${}` 里放表达式 |
 | `a?.b` | 可选链，`a` 为 null/undefined 时返回 undefined 不报错 |
 | `const [a, b] = arr` | 数组解构，按位置取值 |
