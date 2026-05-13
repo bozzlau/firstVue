@@ -27,6 +27,40 @@ const form = ref({
   tag_ids: [],
 })
 
+const containerRef = ref(null)
+const sidebarWidth = ref(256)
+const isDragging = ref(false)
+const MIN_SIDEBAR = 128  // 当前 256px 的一半
+const MIN_MAIN = 400     // 主内容区最小宽度（当前约 800px 的一半）
+
+function startDrag(e) {
+  e.preventDefault()
+  const startX = e.clientX
+  const startWidth = sidebarWidth.value
+
+  document.body.style.cursor = 'col-resize'
+  document.body.style.userSelect = 'none'
+  isDragging.value = true
+
+  function onMove(e) {
+    const delta = startX - e.clientX
+    const containerWidth = containerRef.value?.offsetWidth ?? 1000
+    const maxSidebar = containerWidth - MIN_MAIN - 16
+    sidebarWidth.value = Math.max(MIN_SIDEBAR, Math.min(startWidth + delta, maxSidebar))
+  }
+
+  function onUp() {
+    isDragging.value = false
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+    document.removeEventListener('mousemove', onMove)
+    document.removeEventListener('mouseup', onUp)
+  }
+
+  document.addEventListener('mousemove', onMove)
+  document.addEventListener('mouseup', onUp)
+}
+
 onMounted(async () => {
   loading.value = true
   try {
@@ -78,23 +112,35 @@ async function save() {
     </div>
 
     <el-form :model="form" label-position="top">
-      <div class="grid grid-cols-3 gap-4">
-        <div class="col-span-2 space-y-4">
-          <el-form-item label="标题">
-            <el-input v-model="form.title" />
-          </el-form-item>
-          <el-form-item label="Slug（URL 路径）">
-            <el-input v-model="form.slug" />
-          </el-form-item>
+      <div ref="containerRef" class="flex">
+        <div class="flex-1 min-w-0 space-y-2" :style="{ minWidth: MIN_MAIN + 'px' }">
+          <div class="flex gap-3">
+            <el-form-item label="标题" class="flex-[2]">
+              <el-input v-model="form.title" />
+            </el-form-item>
+            <el-form-item label="Slug（URL 路径）" class="flex-1">
+              <el-input v-model="form.slug" />
+            </el-form-item>
+          </div>
           <el-form-item label="摘要">
-            <el-input v-model="form.summary" type="textarea" :rows="2" />
+            <el-input v-model="form.summary" placeholder="一句话描述文章内容" />
           </el-form-item>
           <el-form-item label="正文">
             <MdEditor v-model="form.content" style="height: 500px" />
           </el-form-item>
         </div>
 
-        <div class="space-y-4">
+        <div
+          class="w-3 mx-1 cursor-col-resize flex items-center justify-center group shrink-0"
+          @mousedown="startDrag"
+        >
+          <div
+            class="w-0.5 h-full transition-colors"
+            :class="isDragging ? 'bg-blue-400' : 'bg-gray-200 group-hover:bg-blue-400'"
+          />
+        </div>
+
+        <div class="shrink-0 space-y-4" :style="{ width: sidebarWidth + 'px', minWidth: MIN_SIDEBAR + 'px' }">
           <el-form-item label="发布状态">
             <el-switch v-model="form.published" active-text="已发布" inactive-text="草稿" />
           </el-form-item>
