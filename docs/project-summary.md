@@ -2,7 +2,8 @@
 
 **项目类型：** 全栈个人博客  
 **开发目的：** 通过实战学习 Python 后端 + Vue 3 前端的全栈开发  
-**完成时间：** 2026-05-13（持续迭代中）
+**完成时间：** 2026-05-13（持续迭代中）  
+**当前版本：** v2.0 — HUD 主题系统升级（2026-05-16）
 
 ---
 
@@ -20,7 +21,7 @@
 | 状态管理 | Pinia | 跨组件共享登录状态 |
 | HTTP 客户端 | Axios | 前端发起 API 请求 |
 | 后台 UI | Element Plus | 管理后台表格/表单/弹窗组件 |
-| 前台样式 | Tailwind CSS v3 | 原子化 CSS，博客公开页面 |
+| 前台样式 | Tailwind CSS v3 + CSS 变量主题系统 | HUD 风格博客公开页，5 套可切换配色 |
 | Markdown 编辑 | md-editor-v3 | 文章编辑器 |
 | Markdown 渲染 | marked | 文章详情页正文渲染 |
 
@@ -68,13 +69,17 @@ firstVue/
 │       │   └── comments.js
 │       ├── stores/
 │       │   ├── auth.js         # 登录状态 + token 持久化
-│       │   └── post.js         # 文章列表缓存
+│       │   ├── post.js         # 文章列表缓存
+│       │   └── theme.js        # 当前主题 + localStorage 持久化
 │       ├── router/
 │       │   └── index.js        # 路由配置 + 路由守卫
 │       ├── components/
 │       │   ├── public/
-│       │   │   ├── PublicLayout.vue  # 顶部导航 + 侧边栏
-│       │   │   └── PostCard.vue      # 文章卡片（可复用）
+│       │   │   ├── PublicLayout.vue  # 顶部 HUD 状态栏 + 侧边栏
+│       │   │   ├── PostCard.vue      # HUD 时间轴卡片
+│       │   │   ├── HudPanel.vue      # 通用 HUD 框面板（带四角 L 装饰）
+│       │   │   ├── StatusDot.vue     # 呼吸状态点
+│       │   │   └── ThemeSwitcher.vue # 顶栏主题切换下拉
 │       │   └── admin/
 │       │       └── AdminLayout.vue   # 管理后台侧边栏布局
 │       └── views/
@@ -113,6 +118,7 @@ firstVue/
 - 全文搜索（标题 + 摘要 + 正文）
 - 文章评论（提交后等待审核）
 - 侧边栏显示所有分类和标签
+- HUD 风格 UI + 5 套主题（3 暗 2 浅）实时切换，选择持久化
 
 ### 管理后台（需登录）
 
@@ -198,6 +204,50 @@ npm run dev
 - **退出登录移至侧边栏底部**：移除了原来独占 60px 的顶部 header，"退出登录"改放侧边栏底部（`mt-auto`），内容区从页面顶部直接开始，节省垂直空间。
 - **文章编辑器右侧栏可拖拽**：`PostEditView` 右侧属性栏（发布状态/分类/标签/封面图）宽度可拖拽（默认 256px，最小 128px），主编辑区自动填满剩余空间。
 - **编辑器表单紧凑化**：标题与 Slug 并排一行（2:1 比例），摘要改为单行输入，表单间距从 16px 缩为 8px，编辑器上方节省约 150px 垂直空间。
+
+---
+
+## v2.0 — HUD 主题系统升级（2026-05-16）
+
+公开页前端从经典「白底 + 灰卡 + 蓝按钮」整体重构为 HUD（仪表盘）视觉风格，并配套上线**多主题切换系统**。后台 `/admin/*` 完全保留 Element Plus，本次升级零侵入。
+
+### 视觉重构 — HUD 风格
+
+完整重写了所有公开页（`HomeView` / `PostView` / `CategoryView` / `TagView` / `SearchView` / `AboutView`）和布局组件（`PublicLayout` / `PostCard`），引入「博客系统控制台」隐喻：
+
+- **品牌符号**：顶栏 `▮▮▮ BLOG.SYS v1.0` + 实时时钟 + `● ONLINE` 呼吸状态点 + `003 POSTS` 计数
+- **HUD 装饰原语**：`.hud-frame` 四角 L 形高亮 + `.hud-grid-bg` 极淡网格底 + `.hud-glow-bar` hover 时的左缘光柱 + `.hud-scan` 可选扫描线
+- **HUD 文案**：区段用 `// LATEST_FEED` `// CATEGORY` `// TRANSMISSIONS` 等等宽前缀；按钮 `[ EXEC ]` `[ TRANSMIT ▸ ]`；空态 `// NO_DATA`；加载态 `[ LOADING ▮▮▮ ]`
+- **数字感**：文章卡前缀 `[001]`（`padStart(3, '0')`）；日期前 `◆`；阅读量前 `▸`
+- **新增原子组件**：`HudPanel.vue`（通用 HUD 框）、`StatusDot.vue`（呼吸状态点）
+- **字体**：标题/UI 用 Space Grotesk，编号/时间戳/技术标签用 JetBrains Mono，正文用 Inter + 系统中文字体
+- **prose 主题**：文章正文用自定义 `.prose-hud` 类，链接、代码块、引用、表格全部按 HUD 风重做
+
+### 多主题切换系统
+
+提供 5 套配色，可在顶栏 `◐ THEME` 切换，实时 0.35s 平滑过渡，无刷新：
+
+| Key | 名称 | 模式 | 强调色 | 背景 |
+|-----|------|------|--------|------|
+| `amber-dark` | 琉珀控制台 | dark | `#ffb700` | `#121214` |
+| `cyan-dark` | 电子终端 | dark | `#22d3ee` | `#0c1018` |
+| `magenta-dark` | 赛博粉紫 | dark | `#ec4899` | `#120a18` |
+| `paper-light` | 牛皮蓝图 | light | `#b87900` | `#f4eedf` |
+| `frost-light` | 极地霜白 | light | `#0d9488` | `#eef2f7` |
+
+### 实现要点
+
+- **CSS 变量 + Tailwind alpha-value 占位**：`tailwind.config.js` 把 `colors.hud.*` 全部声明为 `rgb(var(--hud-*) / <alpha-value>)`，变量值用空格分隔的 RGB 三元组（如 `255 183 0`）。这样 `bg-hud-amber/10`、`border-hud-amber/60` 这类透明度变体在任何主题下都自动生效，**所有视图组件的 Tailwind class 一行没改**，只换底层 CSS 变量映射就完成主题切换。
+- **主题数据源**：`stores/theme.js`（Pinia setup store）维护 `themes` 列表 + `current` 引用，`setTheme(key)` 同步写 `localStorage` 和 `<html data-theme="...">`，与现有 `auth.js` 模式保持一致。
+- **FOUC 预防**：`index.html` 的 `<head>` 加内联 IIFE 脚本，在 Vue 启动前先把 `data-theme` 写到 `<html>` 上，首屏不闪默认主题。
+- **全局过渡**：`body`、`.hud-frame`、`.hud-btn`、`.prose-hud` 等关键容器加 `transition: background-color/border-color/color 0.35s ease`，切换瞬间整页平滑变色。
+- **切换 UI**：`ThemeSwitcher.vue` 顶栏触发 + 下拉浮层，每行展示色卡（背景 + 强调）、中文名、key 和 mode；点击外部 / `Esc` 自动关闭。
+
+### 受影响文件
+
+- 修改：`tailwind.config.js`、`src/style.css`（重写）、`index.html`、`src/main.js`、`PublicLayout.vue`、`PostCard.vue`、所有 `views/public/*.vue`
+- 新增：`stores/theme.js`、`components/public/HudPanel.vue`、`components/public/StatusDot.vue`、`components/public/ThemeSwitcher.vue`
+- 不动：所有 `views/admin/*`、`components/admin/*`、`api/*`、`router/*`、后端
 
 ---
 

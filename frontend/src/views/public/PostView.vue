@@ -1,9 +1,10 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { marked } from 'marked'
 import { getPost } from '../../api/posts'
 import { getComments, createComment } from '../../api/comments'
+import HudPanel from '../../components/public/HudPanel.vue'
 
 const route = useRoute()
 const post = ref(null)
@@ -39,103 +40,160 @@ async function submitComment() {
   }
 }
 
+const code = computed(() => post.value ? String(post.value.id).padStart(3, '0') : '000')
+const dateStr = computed(() => {
+  if (!post.value) return ''
+  const d = new Date(post.value.created_at)
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}`
+})
+
+function commentDate(c) {
+  const d = new Date(c.created_at)
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
 onMounted(load)
 watch(() => route.params.slug, load)
 </script>
 
 <template>
   <div>
-    <div v-if="loading" class="text-center py-12 text-gray-400">加载中...</div>
+    <div v-if="loading" class="text-center py-16 font-mono text-xs uppercase tracking-widest text-hud-textDim">
+      [ FETCHING ▮▮▮ ]
+    </div>
 
     <article v-else-if="post">
+      <header class="hud-frame mb-8">
+        <div class="flex items-center justify-between h-7 px-4 border-b border-hud-borderDim bg-hud-amber/5">
+          <div class="flex items-center gap-3 font-mono text-[11px] uppercase tracking-wider">
+            <span class="text-hud-amber">[POST_{{ code }}]</span>
+            <span class="text-hud-textMuted">·</span>
+            <span class="text-hud-textDim">◆ {{ dateStr }}</span>
+            <span class="text-hud-textMuted">·</span>
+            <span class="text-hud-textDim">▸ {{ post.views }} VIEWS</span>
+          </div>
+          <span
+            v-if="post.category"
+            class="font-mono text-[10px] uppercase tracking-wider text-hud-amber border border-hud-amberDim/60 px-1.5 py-0.5"
+          >
+            {{ post.category.name }}
+          </span>
+        </div>
+
+        <div class="p-6">
+          <h1 class="font-display text-3xl md:text-4xl font-bold text-hud-amberSoft leading-tight mb-3">
+            {{ post.title }}
+          </h1>
+          <p v-if="post.summary" class="text-sm text-hud-textDim mb-4 leading-relaxed">
+            {{ post.summary }}
+          </p>
+          <div v-if="post.tags?.length" class="flex items-center gap-2 flex-wrap pt-3 border-t border-hud-borderDim">
+            <span class="font-mono text-[10px] uppercase tracking-widest text-hud-textMuted">// TAGS</span>
+            <router-link
+              v-for="tag in post.tags"
+              :key="tag.id"
+              :to="`/tag/${tag.slug}`"
+              class="hud-tag"
+            >
+              {{ tag.name }}
+            </router-link>
+          </div>
+        </div>
+      </header>
+
       <img
         v-if="post.cover_image"
         :src="post.cover_image"
         :alt="post.title"
-        class="w-full h-64 object-cover rounded-lg mb-6"
+        class="w-full h-64 object-cover border border-hud-borderDim mb-8"
       />
 
-      <div class="flex items-center gap-2 mb-3 flex-wrap">
-        <span v-if="post.category" class="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full">
-          {{ post.category.name }}
-        </span>
-        <span
-          v-for="tag in post.tags"
-          :key="tag.id"
-          class="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full"
-        >
-          {{ tag.name }}
-        </span>
-      </div>
-
-      <h1 class="text-3xl font-bold text-gray-900 mb-3">{{ post.title }}</h1>
-
-      <div class="flex items-center gap-4 text-sm text-gray-400 mb-8 pb-6 border-b">
-        <span>{{ new Date(post.created_at).toLocaleDateString('zh-CN') }}</span>
-        <span>{{ post.views }} 次阅读</span>
-      </div>
-
       <div
-        class="prose prose-gray max-w-none"
+        class="prose-hud"
         v-html="marked(post.content)"
       />
 
-      <!-- 评论区 -->
-      <section class="mt-12 pt-8 border-t">
-        <h2 class="text-xl font-semibold text-gray-800 mb-6">
-          评论 <span class="text-sm font-normal text-gray-400">{{ comments.length }} 条</span>
-        </h2>
-
-        <div v-if="comments.length === 0" class="text-gray-400 text-sm mb-8">暂无评论</div>
-        <div v-else class="space-y-4 mb-8">
-          <div
-            v-for="c in comments"
-            :key="c.id"
-            class="bg-gray-50 rounded-lg p-4"
-          >
-            <div class="flex items-center justify-between mb-2">
-              <span class="font-medium text-gray-700 text-sm">{{ c.author_name }}</span>
-              <span class="text-xs text-gray-400">{{ new Date(c.created_at).toLocaleDateString('zh-CN') }}</span>
+      <section class="mt-16">
+        <HudPanel
+          :label="`// TRANSMISSIONS`"
+          :status="`${String(comments.length).padStart(2, '0')} RECEIVED`"
+        >
+          <div v-if="comments.length === 0" class="font-mono text-xs uppercase tracking-widest text-hud-textMuted py-4 text-center">
+            // NO_TRANSMISSIONS
+          </div>
+          <div v-else class="space-y-3 mb-2">
+            <div
+              v-for="c in comments"
+              :key="c.id"
+              class="relative border border-hud-borderDim bg-hud-bg/40 p-3 group"
+            >
+              <span class="hud-glow-bar" />
+              <div class="flex items-center justify-between mb-1.5 font-mono text-[10px] uppercase tracking-wider">
+                <span class="text-hud-amber">[USER] {{ c.author_name }}</span>
+                <span class="text-hud-textMuted">{{ commentDate(c) }}</span>
+              </div>
+              <p class="text-sm text-hud-text leading-relaxed whitespace-pre-line">{{ c.content }}</p>
             </div>
-            <p class="text-gray-600 text-sm">{{ c.content }}</p>
           </div>
+        </HudPanel>
+
+        <div v-if="submitted" class="mt-4 hud-frame border-hud-amber/60 p-3 font-mono text-xs uppercase tracking-wider text-hud-amber">
+          ✓ TRANSMISSION_QUEUED // PENDING REVIEW
         </div>
 
-        <div v-if="submitted" class="bg-green-50 text-green-700 text-sm rounded p-3 mb-4">
-          评论已提交，等待审核后显示。
-        </div>
-
-        <form v-else @submit.prevent="submitComment" class="space-y-3">
-          <h3 class="text-base font-medium text-gray-700">发表评论</h3>
-          <div class="grid grid-cols-2 gap-3">
-            <input
-              v-model="commentForm.author_name"
-              required
-              placeholder="姓名"
-              class="border border-gray-200 rounded px-3 py-2 text-sm outline-none focus:border-blue-400"
-            />
-            <input
-              v-model="commentForm.author_email"
-              required
-              type="email"
-              placeholder="邮箱（不公开）"
-              class="border border-gray-200 rounded px-3 py-2 text-sm outline-none focus:border-blue-400"
-            />
-          </div>
-          <textarea
-            v-model="commentForm.content"
-            required
-            placeholder="写下你的评论..."
-            rows="4"
-            class="w-full border border-gray-200 rounded px-3 py-2 text-sm outline-none focus:border-blue-400 resize-none"
-          />
-          <button
-            type="submit"
-            :disabled="submitting"
-            class="bg-blue-500 text-white px-4 py-2 rounded text-sm hover:bg-blue-600 disabled:opacity-50"
-          >
-            {{ submitting ? '提交中...' : '提交评论' }}
-          </button>
+        <form v-else @submit.prevent="submitComment" class="mt-4">
+          <HudPanel label="// COMPOSE_TRANSMISSION">
+            <div class="space-y-3">
+              <div class="grid grid-cols-2 gap-3">
+                <div class="flex items-center gap-2">
+                  <span class="font-mono text-[10px] uppercase text-hud-textMuted shrink-0">▸ NAME</span>
+                  <input
+                    v-model="commentForm.author_name"
+                    required
+                    placeholder="callsign"
+                    class="hud-input flex-1"
+                  />
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="font-mono text-[10px] uppercase text-hud-textMuted shrink-0">▸ MAIL</span>
+                  <input
+                    v-model="commentForm.author_email"
+                    required
+                    type="email"
+                    placeholder="not_public@host"
+                    class="hud-input flex-1"
+                  />
+                </div>
+              </div>
+              <div>
+                <div class="font-mono text-[10px] uppercase text-hud-textMuted mb-1">▸ MESSAGE</div>
+                <textarea
+                  v-model="commentForm.content"
+                  required
+                  placeholder="type your transmission ____"
+                  rows="4"
+                  class="w-full bg-hud-bg/40 border border-hud-borderDim text-hud-text font-sans text-sm
+                         px-3 py-2 outline-none transition-colors duration-200 resize-none
+                         placeholder:text-hud-textMuted focus:border-hud-amber"
+                />
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="font-mono text-[10px] uppercase text-hud-textMuted">
+                  <span class="text-hud-amber animate-hud-blink">▮</span>
+                  STATUS: {{ submitting ? 'TRANSMITTING' : 'READY' }}
+                </span>
+                <button
+                  type="submit"
+                  :disabled="submitting"
+                  class="hud-btn"
+                >
+                  {{ submitting ? '[ SENDING... ]' : '[ TRANSMIT ▸ ]' }}
+                </button>
+              </div>
+            </div>
+          </HudPanel>
         </form>
       </section>
     </article>

@@ -12,7 +12,7 @@ A full-stack personal blog built with FastAPI and Vue 3.
 
 **Frontend**
 - Vue 3 + Vite + Vue Router 4 + Pinia
-- Public UI: Tailwind CSS v3
+- Public UI: Tailwind CSS v3 with HUD-style theming (5 switchable palettes, 3 dark + 2 light)
 - Admin UI: Element Plus
 - Markdown editor: md-editor-v3 / marked
 
@@ -85,3 +85,4 @@ Tests use an in-memory SQLite database — no `.env` required.
 - **Audit log**: Every publish/draft/delete/restore action is recorded in `post_logs`
 - **Resizable panels**: Admin sidebar and post editor panel are draggable
 - **Auth guard**: Frontend redirects to `/admin/login` on 401 or missing token
+- **HUD theming (v2.0)**: Public site ships with a HUD/dashboard visual language and a runtime theme switcher (5 palettes via CSS variables, persisted in `localStorage`); see [docs/project-summary.md](docs/project-summary.md) for details

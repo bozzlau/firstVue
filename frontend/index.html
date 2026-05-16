@@ -4,7 +4,20 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      (function () {
+        var valid = ['amber-dark', 'cyan-dark', 'magenta-dark', 'paper-light', 'frost-light'];
+        var stored = localStorage.getItem('theme');
+        document.documentElement.dataset.theme = valid.indexOf(stored) >= 0 ? stored : 'amber-dark';
+      })();
+    </script>
+    <title>BLOG.SYS</title>
   </head>
   <body>
     <div id="app"></div>
