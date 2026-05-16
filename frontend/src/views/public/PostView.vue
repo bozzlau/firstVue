@@ -1,10 +1,11 @@
 <script setup>
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, onMounted, onUnmounted, watch, computed, inject, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { marked } from 'marked'
 import { getPost } from '../../api/posts'
 import { getComments, createComment } from '../../api/comments'
 import HudPanel from '../../components/public/HudPanel.vue'
+import PostToc from '../../components/public/PostToc.vue'
 
 const route = useRoute()
 const post = ref(null)
@@ -14,9 +15,71 @@ const commentForm = ref({ author_name: '', author_email: '', content: '' })
 const submitting = ref(false)
 const submitted = ref(false)
 
+const tocVisible = inject('tocVisible', ref(true))
+const activeId = ref(null)
+
+const tocItems = computed(() => {
+  if (!post.value?.content) return []
+  const tokens = marked.lexer(post.value.content)
+  const items = []
+  let i = 0
+  for (const t of tokens) {
+    if (t.type === 'heading' && (t.depth === 2 || t.depth === 3)) {
+      items.push({ id: `heading-${i}`, text: t.text, depth: t.depth })
+      i++
+    }
+  }
+  return items
+})
+
+const renderedHtml = computed(() => {
+  if (!post.value?.content) return ''
+  let i = 0
+  return marked(post.value.content).replace(
+    /<(h[23])>/g,
+    (_, tag) => `<${tag} id="heading-${i++}">`,
+  )
+})
+
+let observer = null
+const visibleIds = new Set()
+
+function setupObserver() {
+  observer?.disconnect()
+  visibleIds.clear()
+  if (!tocItems.value.length) return
+  observer = new IntersectionObserver(
+    (entries) => {
+      for (const e of entries) {
+        if (e.isIntersecting) visibleIds.add(e.target.id)
+        else visibleIds.delete(e.target.id)
+      }
+      if (visibleIds.size > 0) {
+        const order = tocItems.value.map((t) => t.id)
+        let topmost = null
+        let topmostIdx = Infinity
+        for (const id of visibleIds) {
+          const idx = order.indexOf(id)
+          if (idx >= 0 && idx < topmostIdx) {
+            topmostIdx = idx
+            topmost = id
+          }
+        }
+        if (topmost) activeId.value = topmost
+      }
+    },
+    { rootMargin: '-80px 0px -70% 0px', threshold: 0 },
+  )
+  document.querySelectorAll('.prose-hud h2[id], .prose-hud h3[id]').forEach((el) => {
+    observer.observe(el)
+  })
+}
+
 async function load() {
   loading.value = true
   submitted.value = false
+  observer?.disconnect()
+  activeId.value = null
   try {
     const [p, c] = await Promise.all([
       getPost(route.params.slug),
@@ -27,6 +90,8 @@ async function load() {
   } finally {
     loading.value = false
   }
+  await nextTick()
+  setupObserver()
 }
 
 async function submitComment() {
@@ -55,6 +120,9 @@ function commentDate(c) {
 }
 
 onMounted(load)
+onUnmounted(() => {
+  observer?.disconnect()
+})
 watch(() => route.params.slug, load)
 </script>
 
@@ -112,8 +180,12 @@ watch(() => route.params.slug, load)
 
       <div
         class="prose-hud"
-        v-html="marked(post.content)"
+        v-html="renderedHtml"
       />
+
+      <Teleport v-if="post && tocItems.length && tocVisible" to="#toc-mount">
+        <PostToc :items="tocItems" :active-id="activeId" />
+      </Teleport>
 
       <section class="mt-16">
         <HudPanel

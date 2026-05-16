@@ -86,3 +86,4 @@ Tests use an in-memory SQLite database — no `.env` required.
 - **Resizable panels**: Admin sidebar and post editor panel are draggable
 - **Auth guard**: Frontend redirects to `/admin/login` on 401 or missing token
 - **HUD theming (v2.0)**: Public site ships with a HUD/dashboard visual language and a runtime theme switcher (5 palettes via CSS variables, persisted in `localStorage`); see [docs/project-summary.md](docs/project-summary.md) for details
+- **Article TOC + adaptive width (v2.1)**: Article pages render a left-side TOC (H2/H3) with scroll-synced highlighting via `IntersectionObserver`; 3-column layout adapts to 90% viewport (capped at 1600px), all 2-column states stay locked at 1152px to prevent cross-page width jumps

@@ -42,7 +42,7 @@ onUnmounted(() => {
       :class="open ? 'border-hud-amber text-hud-amber bg-hud-amber/10' : ''"
       @click.stop="toggle"
     >
-      <span class="text-hud-amber text-[11px]">◐</span>
+      <span class="text-hud-amber text-base leading-none">◐</span>
       <span>THEME</span>
     </button>
 

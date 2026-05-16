@@ -284,6 +284,10 @@ body {
   padding-bottom: 0.3em;
   border-bottom: 1px solid rgb(var(--hud-border-dim));
 }
+.prose-hud h2,
+.prose-hud h3 {
+  scroll-margin-top: 80px;
+}
 .prose-hud h2::before {
   content: '// ';
   color: rgb(var(--hud-amber-dim));

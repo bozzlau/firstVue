@@ -3,7 +3,9 @@
 **项目类型：** 全栈个人博客  
 **开发目的：** 通过实战学习 Python 后端 + Vue 3 前端的全栈开发  
 **完成时间：** 2026-05-13（持续迭代中）  
-**当前版本：** v2.0 — HUD 主题系统升级（2026-05-16）
+**版本历史：**
+- v2.0 — HUD 主题系统升级（2026-05-16）
+- v2.1 — 文章阅读体验优化（2026-05-16）
 
 ---
 
@@ -77,6 +79,7 @@ firstVue/
 │       │   ├── public/
 │       │   │   ├── PublicLayout.vue  # 顶部 HUD 状态栏 + 侧边栏
 │       │   │   ├── PostCard.vue      # HUD 时间轴卡片
+│       │   │   ├── PostToc.vue       # 文章目录（H2/H3 滚动同步高亮）
 │       │   │   ├── HudPanel.vue      # 通用 HUD 框面板（带四角 L 装饰）
 │       │   │   ├── StatusDot.vue     # 呼吸状态点
 │       │   │   └── ThemeSwitcher.vue # 顶栏主题切换下拉
@@ -114,6 +117,7 @@ firstVue/
 
 - 首页文章列表，分页浏览
 - 文章详情页，渲染 Markdown 正文
+- 文章目录（TOC）：自动从 H2/H3 抽取，滚动同步高亮当前章节，可显示/隐藏
 - 按分类/标签筛选文章
 - 全文搜索（标题 + 摘要 + 正文）
 - 文章评论（提交后等待审核）
@@ -248,6 +252,58 @@ npm run dev
 - 修改：`tailwind.config.js`、`src/style.css`（重写）、`index.html`、`src/main.js`、`PublicLayout.vue`、`PostCard.vue`、所有 `views/public/*.vue`
 - 新增：`stores/theme.js`、`components/public/HudPanel.vue`、`components/public/StatusDot.vue`、`components/public/ThemeSwitcher.vue`
 - 不动：所有 `views/admin/*`、`components/admin/*`、`api/*`、`router/*`、后端
+
+---
+
+## v2.1 — 文章阅读体验优化（2026-05-16）
+
+基于 v2.0 主题系统，针对长文章阅读场景做了一次细化：新增文章目录、放大侧栏字号、把三栏布局改成自适应宽度，并锁定"任意 2 栏状态宽度恒等"的硬约束以消除页面间宽度跳动。
+
+### 文章目录（TOC）
+
+文章详情页 `/posts/:slug` 在 ≥1280px 屏幕的左侧栏渲染 `// CONTENTS` 面板：
+
+- **结构**：从正文 H2 / H3 抽取；H2 显示 `01 / 02 / ...` 序号，H3 缩进 + `·` 前缀
+- **滚动同步**：`IntersectionObserver`（`rootMargin: '-80px 0px -70% 0px'`）跟踪可见标题，活动项以 amber 色 + 左侧 2px 竖条高亮；多个标题同时进入视口时取最靠上一个
+- **平滑跳转**：点击调用 `scrollIntoView({ behavior: 'smooth' })`，配合 `.prose-hud h2/h3 { scroll-margin-top: 80px }` 避开顶栏遮挡
+- **显隐切换**：header 右上 `✕` 关闭；隐藏后左上浮动 `[ ◀ TOC ]` 按钮唤回；状态由 `provide/inject('tocVisible')` 在 PublicLayout 与 PostToc 之间共享
+- **跨组件挂载**：`PostView` 用 `<Teleport to="#toc-mount">` 把 `PostToc` 投递到 `PublicLayout` 中的占位容器，TOC 数据生成与展示集中在 PostView，layout 只暴露挂载点
+- **标题 ID 注入**：`marked()` 渲染后用正则给 `<h2>/<h3>` 注入 `id="heading-N"` 序号 ID，与 `marked.lexer` 抽取出的 `tocItems` 序号严格对齐，避开中文 slug 冲突
+
+### 自适应宽度 + 宽度不变量
+
+主容器宽度按状态切换：
+
+| 场景 | 宽度 |
+|------|------|
+| 任意 2 栏状态（非文章页 / TOC 关闭 / 视口 < xl） | `max-w-6xl`（1152px） |
+| 唯一 3 栏状态（文章页 + TOC 开启 + ≥1280px） | `90%` 视口宽度，封顶 1600px |
+
+硬约束：**所有 2 栏状态宽度严格相等**，跨页面跳转不再出现"边界跳动"。顶栏内容器与主 grid 共用同一 `containerClass`，导航栏左右边界永远对齐正文。
+
+TOC 出现的断点从 `lg:`（1024px）提高到 `xl:`（1280px）—— 中等宽度窗口下 3 栏太挤体感由此消失。
+
+### 侧栏字号放大
+
+| 位置 | 旧 | 新 |
+|------|-----|-----|
+| TOC header / `✕` 关闭按钮 | 11px | 12px |
+| TOC 项编号 | 10px | 11px |
+| TOC 项标题 | 12px | 14px |
+| 右栏分类名 | 14px | 16px |
+| 右栏分类序号 / `▸` | 10px | 11px |
+| 右栏 TAGS 标签 | 10px | 12px |
+| 右栏 SYS 信息 | 10px | 11px |
+| 顶栏 `⌕` 搜索图标 | 12px | 18px |
+| 顶栏 `◐` 主题图标 | 11px | 16px |
+
+`.hud-tag` 全局保持 10px（顶栏 `/ABOUT`、`◐ THEME`、search 区都依赖它），右栏标签通过 `text-xs` 后置覆盖。
+
+### 受影响文件
+
+- 修改：`PublicLayout.vue`（`containerClass` / `gridInner` 抽取、断点 lg→xl、右栏字号、搜索图标）、`ThemeSwitcher.vue`（主题图标）、`PostView.vue`（marked id 注入、`tocItems` 计算、`IntersectionObserver`、`Teleport`）、`src/style.css`（`.prose-hud h2/h3 scroll-margin-top`）
+- 新增：`components/public/PostToc.vue`
+- 不动：所有 `views/admin/*`、`components/admin/*`、`api/*`、`router/*`、其它公开视图、后端
 
 ---
 

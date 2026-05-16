@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { ref, onMounted, onUnmounted, computed, provide } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { getCategories } from '../../api/categories'
 import { getTags } from '../../api/tags'
@@ -15,6 +15,22 @@ const tags = ref([])
 const totalPosts = ref(0)
 const searchQ = ref('')
 const now = ref(new Date())
+
+const isArticle = computed(() => route.path.startsWith('/posts/'))
+const tocVisible = ref(true)
+provide('tocVisible', tocVisible)
+
+const containerClass = computed(() =>
+  isArticle.value && tocVisible.value
+    ? 'mx-auto px-4 md:px-6 max-w-6xl xl:w-[90%] xl:max-w-[1600px]'
+    : 'mx-auto px-4 md:px-6 max-w-6xl',
+)
+
+const gridInner = computed(() =>
+  isArticle.value && tocVisible.value
+    ? 'py-8 md:py-10 grid gap-8 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_240px] xl:grid-cols-[200px_minmax(0,1fr)_240px]'
+    : 'py-8 md:py-10 grid gap-8 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_240px]',
+)
 
 const clock = computed(() => {
   const d = now.value
@@ -50,7 +66,7 @@ function doSearch() {
 <template>
   <div class="hud-grid-bg min-h-screen text-hud-text">
     <nav class="sticky top-0 z-20 backdrop-blur bg-hud-bg/85 border-b border-hud-border">
-      <div class="max-w-6xl mx-auto px-6 h-12 flex items-center gap-6">
+      <div :class="containerClass" class="h-12 flex items-center gap-6">
         <router-link to="/" class="flex items-center gap-2 no-underline shrink-0">
           <span class="font-mono text-hud-amber tracking-widest">▮▮▮</span>
           <span class="font-display font-bold tracking-wider text-hud-text text-sm">BLOG.SYS</span>
@@ -68,7 +84,7 @@ function doSearch() {
         <div class="flex-1" />
 
         <form @submit.prevent="doSearch" class="flex items-center gap-2 group">
-          <span class="font-mono text-hud-amber text-xs">⌕</span>
+          <span class="font-mono text-hud-amber text-lg leading-none">⌕</span>
           <input
             v-model="searchQ"
             type="text"
@@ -89,64 +105,83 @@ function doSearch() {
       </div>
     </nav>
 
-    <div class="max-w-6xl mx-auto px-4 md:px-6 py-8 md:py-10 grid gap-8 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_240px]">
-      <main class="min-w-0">
-        <RouterView />
-      </main>
+    <button
+      v-if="isArticle && !tocVisible"
+      type="button"
+      class="hidden xl:flex fixed left-4 top-20 z-30 hud-tag bg-hud-surface items-center gap-1.5"
+      @click="tocVisible = true"
+    >
+      <span class="text-hud-amber">◀</span>
+      <span>TOC</span>
+    </button>
 
-      <aside class="hidden lg:block space-y-5 self-start sticky top-20">
-        <HudPanel
-          v-if="categories.length"
-          label="// CATEGORY"
-          :status="`${String(categories.length).padStart(2, '0')} ITEMS`"
-          no-pad
+    <div :class="containerClass">
+      <div :class="gridInner">
+        <aside
+          v-if="isArticle && tocVisible"
+          class="hidden xl:block self-start sticky top-20"
         >
-          <ul class="divide-y divide-hud-borderDim">
-            <li v-for="(cat, i) in categories" :key="cat.id">
+          <div id="toc-mount" />
+        </aside>
+
+        <main class="min-w-0">
+          <RouterView />
+        </main>
+
+        <aside class="hidden lg:block space-y-5 self-start sticky top-20">
+          <HudPanel
+            v-if="categories.length"
+            label="// CATEGORY"
+            :status="`${String(categories.length).padStart(2, '0')} ITEMS`"
+            no-pad
+          >
+            <ul class="divide-y divide-hud-borderDim">
+              <li v-for="(cat, i) in categories" :key="cat.id">
+                <router-link
+                  :to="`/category/${cat.slug}`"
+                  class="flex items-center justify-between px-3 py-2 no-underline transition-colors hover:bg-hud-amber/5 group"
+                  :class="route.params.slug === cat.slug && route.path.startsWith('/category') ? 'bg-hud-amber/10' : ''"
+                >
+                  <span class="flex items-center gap-2 min-w-0">
+                    <span class="font-mono text-[11px] text-hud-textMuted">{{ String(i + 1).padStart(2, '0') }}</span>
+                    <span
+                      class="text-base truncate"
+                      :class="route.params.slug === cat.slug && route.path.startsWith('/category')
+                        ? 'text-hud-amber'
+                        : 'text-hud-text group-hover:text-hud-amberSoft'"
+                    >{{ cat.name }}</span>
+                  </span>
+                  <span class="font-mono text-[11px] text-hud-textMuted group-hover:text-hud-amber">▸</span>
+                </router-link>
+              </li>
+            </ul>
+          </HudPanel>
+
+          <HudPanel
+            v-if="tags.length"
+            label="// TAGS"
+            :status="`${String(tags.length).padStart(2, '0')} TAGS`"
+          >
+            <div class="flex flex-wrap gap-1.5">
               <router-link
-                :to="`/category/${cat.slug}`"
-                class="flex items-center justify-between px-3 py-2 no-underline transition-colors hover:bg-hud-amber/5 group"
-                :class="route.params.slug === cat.slug && route.path.startsWith('/category') ? 'bg-hud-amber/10' : ''"
+                v-for="tag in tags"
+                :key="tag.id"
+                :to="`/tag/${tag.slug}`"
+                class="hud-tag text-xs"
+                :class="route.params.slug === tag.slug && route.path.startsWith('/tag') ? 'border-hud-amber text-hud-amber bg-hud-amber/10' : ''"
               >
-                <span class="flex items-center gap-2 min-w-0">
-                  <span class="font-mono text-[10px] text-hud-textMuted">{{ String(i + 1).padStart(2, '0') }}</span>
-                  <span
-                    class="text-sm truncate"
-                    :class="route.params.slug === cat.slug && route.path.startsWith('/category')
-                      ? 'text-hud-amber'
-                      : 'text-hud-text group-hover:text-hud-amberSoft'"
-                  >{{ cat.name }}</span>
-                </span>
-                <span class="font-mono text-[10px] text-hud-textMuted group-hover:text-hud-amber">▸</span>
+                {{ tag.name }}
               </router-link>
-            </li>
-          </ul>
-        </HudPanel>
+            </div>
+          </HudPanel>
 
-        <HudPanel
-          v-if="tags.length"
-          label="// TAGS"
-          :status="`${String(tags.length).padStart(2, '0')} TAGS`"
-        >
-          <div class="flex flex-wrap gap-1.5">
-            <router-link
-              v-for="tag in tags"
-              :key="tag.id"
-              :to="`/tag/${tag.slug}`"
-              class="hud-tag"
-              :class="route.params.slug === tag.slug && route.path.startsWith('/tag') ? 'border-hud-amber text-hud-amber bg-hud-amber/10' : ''"
-            >
-              {{ tag.name }}
-            </router-link>
+          <div class="font-mono text-[11px] text-hud-textMuted leading-relaxed px-1">
+            <div>SYS // BLOG.SYS v1.0</div>
+            <div>UPLINK // <span class="text-hud-amber">STABLE</span></div>
+            <div>SECURE // <span class="text-hud-amber">[OK]</span></div>
           </div>
-        </HudPanel>
-
-        <div class="font-mono text-[10px] text-hud-textMuted leading-relaxed px-1">
-          <div>SYS // BLOG.SYS v1.0</div>
-          <div>UPLINK // <span class="text-hud-amber">STABLE</span></div>
-          <div>SECURE // <span class="text-hud-amber">[OK]</span></div>
-        </div>
-      </aside>
+        </aside>
+      </div>
     </div>
   </div>
 </template>
