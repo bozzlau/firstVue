@@ -102,18 +102,25 @@ async function save() {
 </script>
 
 <template>
-  <div v-loading="loading">
-    <div class="flex items-center justify-between mb-4">
-      <h2 class="text-xl font-semibold text-gray-800">{{ isEdit ? '编辑文章' : '新建文章' }}</h2>
+  <div v-loading="loading" class="flex flex-col h-full">
+    <!-- Topbar -->
+    <div class="sticky top-0 z-10 bg-white border-b border-[#e3e8ef] px-7 h-14 flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-2 text-[13px]">
+        <router-link to="/admin/posts" class="text-[#697386] hover:text-[#635bff] transition-colors no-underline">文章管理</router-link>
+        <span class="text-[#e3e8ef]">/</span>
+        <span class="text-[#1a1f36] font-medium">{{ isEdit ? '编辑文章' : '新建文章' }}</span>
+      </div>
       <div class="flex gap-2">
         <el-button @click="router.push('/admin/posts')">取消</el-button>
         <el-button type="primary" :loading="saving" @click="save">保存</el-button>
       </div>
     </div>
 
-    <el-form :model="form" label-position="top">
-      <div ref="containerRef" class="flex">
-        <div class="flex-1 min-w-0 space-y-2" :style="{ minWidth: MIN_MAIN + 'px' }">
+    <!-- Editor area -->
+    <div ref="containerRef" class="flex flex-1 min-h-0 overflow-hidden">
+      <!-- Main -->
+      <div class="flex-1 min-w-0 overflow-y-auto p-7 space-y-4" :style="{ minWidth: MIN_MAIN + 'px' }">
+        <el-form :model="form" label-position="top">
           <div class="flex gap-3">
             <el-form-item label="标题" class="flex-[2]">
               <el-input v-model="form.title" />
@@ -128,47 +135,55 @@ async function save() {
           <el-form-item label="正文">
             <MdEditor v-model="form.content" style="height: 500px" />
           </el-form-item>
-        </div>
+        </el-form>
+      </div>
 
+      <!-- Drag handle -->
+      <div
+        class="w-3 shrink-0 cursor-col-resize flex items-center justify-center group"
+        @mousedown="startDrag"
+      >
         <div
-          class="w-3 mx-1 cursor-col-resize flex items-center justify-center group shrink-0"
-          @mousedown="startDrag"
-        >
-          <div
-            class="w-0.5 h-full transition-colors"
-            :class="isDragging ? 'bg-blue-400' : 'bg-gray-200 group-hover:bg-blue-400'"
-          />
-        </div>
+          class="w-px h-full transition-colors"
+          :class="isDragging ? 'bg-[#635bff]' : 'bg-[#e3e8ef] group-hover:bg-[#635bff]/50'"
+        />
+      </div>
 
-        <div class="shrink-0 space-y-4" :style="{ width: sidebarWidth + 'px', minWidth: MIN_SIDEBAR + 'px' }">
+      <!-- Sidebar -->
+      <div
+        class="shrink-0 overflow-y-auto border-l border-[#e3e8ef] bg-white"
+        :style="{ width: sidebarWidth + 'px', minWidth: MIN_SIDEBAR + 'px' }"
+      >
+        <el-form :model="form" label-position="top" class="p-5 space-y-1">
+          <!-- Publish settings -->
+          <div class="text-[11px] font-semibold text-[#697386] uppercase tracking-wider mb-3">发布设置</div>
           <el-form-item label="发布状态">
             <el-switch v-model="form.published" active-text="已发布" inactive-text="草稿" />
           </el-form-item>
+
+          <div class="border-t border-[#e3e8ef] my-4"></div>
+
+          <!-- Meta -->
+          <div class="text-[11px] font-semibold text-[#697386] uppercase tracking-wider mb-3">分类与标签</div>
           <el-form-item label="分类">
-            <el-select v-model="form.category_id" clearable placeholder="选择分类" class="w-full">
-              <el-option
-                v-for="cat in categories"
-                :key="cat.id"
-                :label="cat.name"
-                :value="cat.id"
-              />
+            <el-select v-model="form.category_id" clearable placeholder="选择分类" class="w-full" :teleported="false">
+              <el-option v-for="cat in categories" :key="cat.id" :label="cat.name" :value="cat.id" />
             </el-select>
           </el-form-item>
           <el-form-item label="标签">
-            <el-select v-model="form.tag_ids" multiple placeholder="选择标签" class="w-full">
-              <el-option
-                v-for="tag in tags"
-                :key="tag.id"
-                :label="tag.name"
-                :value="tag.id"
-              />
+            <el-select v-model="form.tag_ids" multiple placeholder="选择标签" class="w-full" :teleported="false">
+              <el-option v-for="tag in tags" :key="tag.id" :label="tag.name" :value="tag.id" />
             </el-select>
           </el-form-item>
+
+          <div class="border-t border-[#e3e8ef] my-4"></div>
+
+          <div class="text-[11px] font-semibold text-[#697386] uppercase tracking-wider mb-3">封面图</div>
           <el-form-item label="封面图 URL">
             <el-input v-model="form.cover_image" placeholder="https://..." />
           </el-form-item>
-        </div>
+        </el-form>
       </div>
-    </el-form>
+    </div>
   </div>
 </template>
