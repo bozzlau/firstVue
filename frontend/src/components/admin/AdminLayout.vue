@@ -12,6 +12,14 @@ const isDragging = ref(false)
 const MIN_WIDTH = 100  // 200px 的一半
 const MAX_WIDTH = 400
 
+const navItems = [
+  { to: '/admin/dashboard',  label: '仪表盘',  icon: '⊞', exact: true },
+  { to: '/admin/posts',      label: '文章管理', icon: '≡', exact: false },
+  { to: '/admin/categories', label: '分类管理', icon: '⊟', exact: true },
+  { to: '/admin/tags',       label: '标签管理', icon: '◈', exact: true },
+  { to: '/admin/comments',   label: '评论管理', icon: '✉', exact: true },
+]
+
 function startDrag(e) {
   e.preventDefault()
   const startX = e.clientX
@@ -45,7 +53,7 @@ function logout() {
 </script>
 
 <template>
-  <div class="admin-scope flex min-h-screen bg-[#f6f9fc]">
+  <div class="admin-scope flex h-screen overflow-hidden bg-[#f6f9fc]">
     <!-- Sidebar -->
     <div
       class="relative shrink-0 flex flex-col bg-white border-r border-[#e3e8ef]"
@@ -62,58 +70,17 @@ function logout() {
 
       <!-- Nav -->
       <nav class="flex-1 px-2.5 py-3 space-y-0.5">
-        <div class="px-2.5 pt-2 pb-1 text-[11px] font-semibold text-[#697386] uppercase tracking-wider">概览</div>
         <router-link
-          to="/admin/dashboard"
-          class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13.5px] transition-colors"
-          :class="route.path === '/admin/dashboard'
+          v-for="item in navItems"
+          :key="item.to"
+          :to="item.to"
+          class="no-underline flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13.5px] transition-colors"
+          :class="(item.exact ? route.path === item.to : route.path.startsWith(item.to))
             ? 'bg-[#f0effe] text-[#635bff] font-medium'
             : 'text-[#697386] hover:bg-[#f6f9fc] hover:text-[#1a1f36]'"
         >
-          <span class="text-base leading-none">⊞</span>
-          <span>仪表盘</span>
-        </router-link>
-
-        <div class="px-2.5 pt-3 pb-1 text-[11px] font-semibold text-[#697386] uppercase tracking-wider">内容</div>
-        <router-link
-          to="/admin/posts"
-          class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13.5px] transition-colors"
-          :class="route.path.startsWith('/admin/posts')
-            ? 'bg-[#f0effe] text-[#635bff] font-medium'
-            : 'text-[#697386] hover:bg-[#f6f9fc] hover:text-[#1a1f36]'"
-        >
-          <span class="text-base leading-none">≡</span>
-          <span>文章管理</span>
-        </router-link>
-        <router-link
-          to="/admin/categories"
-          class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13.5px] transition-colors"
-          :class="route.path === '/admin/categories'
-            ? 'bg-[#f0effe] text-[#635bff] font-medium'
-            : 'text-[#697386] hover:bg-[#f6f9fc] hover:text-[#1a1f36]'"
-        >
-          <span class="text-base leading-none">⊟</span>
-          <span>分类管理</span>
-        </router-link>
-        <router-link
-          to="/admin/tags"
-          class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13.5px] transition-colors"
-          :class="route.path === '/admin/tags'
-            ? 'bg-[#f0effe] text-[#635bff] font-medium'
-            : 'text-[#697386] hover:bg-[#f6f9fc] hover:text-[#1a1f36]'"
-        >
-          <span class="text-base leading-none">⊞</span>
-          <span>标签管理</span>
-        </router-link>
-        <router-link
-          to="/admin/comments"
-          class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13.5px] transition-colors"
-          :class="route.path === '/admin/comments'
-            ? 'bg-[#f0effe] text-[#635bff] font-medium'
-            : 'text-[#697386] hover:bg-[#f6f9fc] hover:text-[#1a1f36]'"
-        >
-          <span class="text-base leading-none">✉</span>
-          <span>评论管理</span>
+          <span class="text-base leading-none">{{ item.icon }}</span>
+          <span>{{ item.label }}</span>
         </router-link>
       </nav>
 
@@ -142,12 +109,8 @@ function logout() {
     </div>
 
     <!-- Main -->
-    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+    <div class="flex-1 flex flex-col min-w-0 overflow-auto p-6">
       <RouterView />
     </div>
   </div>
 </template>
-
-<style scoped>
-a { text-decoration: none; }
-</style>
