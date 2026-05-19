@@ -38,6 +38,8 @@ pytest tests/test_blog.py::test_name  # single test
 
 Tests use an in-memory SQLite database with `StaticPool`. The `autouse` fixture in `conftest.py` creates and drops all tables around each test. No `.env` needed for tests.
 
+`conftest.py` provides three fixtures: `db` (raw session), `client` (TestClient with DB override), and `auth_headers` (pre-authenticated Bearer token for admin routes).
+
 ### Migrations
 
 ```bash
@@ -60,6 +62,16 @@ schemas/   — Pydantic models for request/response shapes
 ```
 
 Routers never query the DB directly; they call `services/blog.py` functions.
+
+```
+routers/
+├── public/blog.py      — all /api/* public endpoints
+└── admin/
+    ├── auth.py         — POST /admin/login
+    ├── posts.py        — CRUD + soft-delete + restore + logs
+    ├── categories_tags.py
+    └── comments.py
+```
 
 ### API surface
 
@@ -134,5 +146,7 @@ src/
 - **Auth guard**: `router.beforeEach` checks `meta.requiresAuth`; redirects to `/admin/login` if `auth.isLoggedIn` is false.
 - **Token storage**: JWT stored in `localStorage`, read on app init by `useAuthStore`. The axios interceptor reads it on every request; a 401 response clears it and redirects to login.
 - **Element Plus**: configured for on-demand auto-import — do not add global `import ElementPlus from 'element-plus'` to `main.js`.
+- **Admin CSS scoping**: All admin styles live under `.admin-scope` in `style.css` to prevent leaking into the public HUD theme. `AdminLayout` wraps everything in `.admin-scope`; `LoginView` adds it to its own root element since it renders outside `AdminLayout`. All `el-dialog`, `el-popconfirm`, and `el-select` components in admin views must use `:teleported="false"` to stay inside `.admin-scope`.
+- **API base URL**: hardcoded to `http://localhost:8001` in `src/api/client.js` — change there if the backend port changes.
 - **TOC visibility**: `PublicLayout` owns a `tocVisible` ref and `provide`s it to child views. `PostView` injects it to show/hide the TOC column. The layout shifts from 2-column (article + sidebar) to 3-column (TOC + article + sidebar) when on a post page and the screen is wide enough.
 - **Tag cloud**: Sidebar tag cloud cycles through a `TAG_COLORS` array and scales font size by `post_count` — both computed in `PublicLayout`.
