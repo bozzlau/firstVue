@@ -334,6 +334,8 @@ body {
   background: transparent;
   border: 0;
   padding: 0;
+}
+.prose-hud pre code:not(.hljs) {
   color: rgb(var(--hud-text));
 }
 

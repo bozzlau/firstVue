@@ -1,11 +1,62 @@
 <script setup>
 import { ref, onMounted, onUnmounted, watch, computed, inject, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
-import { marked } from 'marked'
+import { marked, Renderer } from 'marked'
+import hljs from 'highlight.js/lib/core'
+import 'highlight.js/styles/atom-one-dark.css'
+import javascript from 'highlight.js/lib/languages/javascript'
+import typescript from 'highlight.js/lib/languages/typescript'
+import python from 'highlight.js/lib/languages/python'
+import bash from 'highlight.js/lib/languages/bash'
+import css from 'highlight.js/lib/languages/css'
+import xml from 'highlight.js/lib/languages/xml'
+import json from 'highlight.js/lib/languages/json'
+import sql from 'highlight.js/lib/languages/sql'
+import go from 'highlight.js/lib/languages/go'
+import rust from 'highlight.js/lib/languages/rust'
+import java from 'highlight.js/lib/languages/java'
+import cpp from 'highlight.js/lib/languages/cpp'
+import yaml from 'highlight.js/lib/languages/yaml'
+import markdown from 'highlight.js/lib/languages/markdown'
+
+hljs.registerLanguage('javascript', javascript)
+hljs.registerLanguage('js', javascript)
+hljs.registerLanguage('typescript', typescript)
+hljs.registerLanguage('ts', typescript)
+hljs.registerLanguage('python', python)
+hljs.registerLanguage('py', python)
+hljs.registerLanguage('bash', bash)
+hljs.registerLanguage('sh', bash)
+hljs.registerLanguage('shell', bash)
+hljs.registerLanguage('css', css)
+hljs.registerLanguage('html', xml)
+hljs.registerLanguage('xml', xml)
+hljs.registerLanguage('json', json)
+hljs.registerLanguage('sql', sql)
+hljs.registerLanguage('go', go)
+hljs.registerLanguage('rust', rust)
+hljs.registerLanguage('java', java)
+hljs.registerLanguage('cpp', cpp)
+hljs.registerLanguage('c', cpp)
+hljs.registerLanguage('yaml', yaml)
+hljs.registerLanguage('yml', yaml)
+hljs.registerLanguage('markdown', markdown)
+hljs.registerLanguage('md', markdown)
 import { getPost } from '../../api/posts'
 import { getComments, createComment } from '../../api/comments'
 import HudPanel from '../../components/public/HudPanel.vue'
 import PostToc from '../../components/public/PostToc.vue'
+
+const renderer = new Renderer()
+renderer.code = ({ text, lang }) => {
+  const language = hljs.getLanguage(lang) ? lang : null
+  const highlighted = language
+    ? hljs.highlight(text, { language }).value
+    : hljs.highlightAuto(text).value
+  const cls = language ?? 'plaintext'
+  return `<pre><code class="hljs language-${cls}">${highlighted}</code></pre>`
+}
+marked.use({ renderer })
 
 const route = useRoute()
 const post = ref(null)
