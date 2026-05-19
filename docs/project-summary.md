@@ -6,6 +6,7 @@
 **版本历史：**
 - v2.0 — HUD 主题系统升级（2026-05-16）
 - v2.1 — 文章阅读体验优化（2026-05-16）
+- v2.2 — 管理后台 Stripe 风格重设计（2026-05-19）
 
 ---
 
@@ -304,6 +305,79 @@ TOC 出现的断点从 `lg:`（1024px）提高到 `xl:`（1280px）—— 中等
 - 修改：`PublicLayout.vue`（`containerClass` / `gridInner` 抽取、断点 lg→xl、右栏字号、搜索图标）、`ThemeSwitcher.vue`（主题图标）、`PostView.vue`（marked id 注入、`tocItems` 计算、`IntersectionObserver`、`Teleport`）、`src/style.css`（`.prose-hud h2/h3 scroll-margin-top`）
 - 新增：`components/public/PostToc.vue`
 - 不动：所有 `views/admin/*`、`components/admin/*`、`api/*`、`router/*`、其它公开视图、后端
+
+---
+
+## v2.2 — 管理后台 Stripe 风格重设计（2026-05-19）
+
+将管理后台从 Element Plus 默认深色侧边栏风格全面升级为 Stripe Dashboard 精致商务浅色风格，提升视觉品质和使用体验。公开博客 HUD 主题系统完全不受影响。
+
+### 设计方向
+
+**风格参考：** Stripe Dashboard  
+**核心特征：**
+- 白色卡片 + 浅蓝灰页面背景（`#f6f9fc`）
+- 极细边框（`#e3e8ef`），无阴影或极轻阴影
+- 靛紫强调色（`#635bff`）用于按钮、选中态、focus 光晕
+- 表格无竖线，仅横向分隔，hover 行背景微变
+- 状态用彩色小圆点 + 文字徽章
+- 操作按钮用细边框 outline 样式，hover 时填充浅色背景
+
+### 配色系统
+
+| 用途 | 颜色值 |
+|------|--------|
+| 页面背景 | `#f6f9fc` |
+| 卡片 / 侧边栏 / 顶栏 | `#ffffff` |
+| 边框 | `#e3e8ef` |
+| 主文字 | `#1a1f36` |
+| 次要文字 | `#697386` |
+| 强调色 | `#635bff` |
+| 成功绿 | `#09b57a` |
+| 警告橙 | `#f59e0b` |
+| 危险红 | `#e53e3e` |
+
+### 主要改动
+
+**AdminLayout（完全重写）**
+- 白色侧边栏替换原深色 slate-900 侧边栏
+- 移除 `el-menu`，改用 `router-link` + `v-for navItems` 数组，减少重复代码
+- 导航选中态：`#f0effe` 背景 + `#635bff` 文字
+- 底部用户信息行（头像渐变 + 用户名 + 角色 + 退出按钮）
+- 拖拽手柄颜色改为靛紫色
+- 布局改为 `h-screen overflow-hidden`，主区 `overflow-auto p-6`
+
+**LoginView（完全重写）**
+- 全屏居中，白色卡片，圆角 10px，轻阴影
+- Logo 图标（靛紫方块）+ 标题 + 副标题
+
+**DashboardView（模板重写）**
+- 3 列统计卡片（文章总数 / 待审评论 / 快速操作）
+- 待审评论数量 > 0 时自动变橙色警示
+
+**PostsView / CategoriesView / TagsView / CommentsView（模板重写）**
+- 统一 sticky 顶栏（h-14，白底，下边框）
+- 表格包裹在白色卡片内，`el-table :border="false"`
+- 状态列改为自定义彩色圆点徽章（替换 `el-tag`）
+- 操作列改为 outline 样式 `<button>`（替换 `el-button`）
+- CommentsView 筛选改为 Tab 按钮组（替换 `el-radio-group`）
+
+**PostEditView（模板重写）**
+- 面包屑顶栏（文章管理 / 编辑文章）
+- 右侧侧边栏分三区块（发布设置 / 分类与标签 / 封面图），细线分隔
+- 拖拽手柄颜色改为靛紫色
+
+### 技术实现要点
+
+- **`.admin-scope` CSS 作用域**：所有 Element Plus CSS 变量覆盖（`--el-color-primary: #635bff` 等）统一写在 `style.css` 的 `.admin-scope` 选择器下，`AdminLayout` 和 `LoginView` 的根元素加此 class，公开博客 HUD 主题零侵入
+- **Teleport 问题修复**：`el-dialog`、`el-popconfirm`、`el-select` 默认 teleport 到 `document.body`，会脱离 `.admin-scope` 导致颜色回退。所有此类组件统一加 `:teleported="false"` 解决
+
+### 受影响文件
+
+- 修改：`frontend/src/style.css`（新增 `.admin-scope` 变量块）
+- 完全重写：`AdminLayout.vue`、`LoginView.vue`、`DashboardView.vue`
+- 模板重写（脚本不动）：`PostsView.vue`、`PostEditView.vue`、`CategoriesView.vue`、`TagsView.vue`、`CommentsView.vue`
+- 不动：所有公开页面、API 层、路由、后端
 
 ---
 
