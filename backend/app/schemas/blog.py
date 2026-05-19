@@ -45,6 +45,7 @@ class TagUpdate(BaseModel):
 
 class TagOut(TagBase):
     id: int
+    post_count: int = 0
 
     model_config = {"from_attributes": True}
 

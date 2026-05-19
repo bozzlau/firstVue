@@ -8,6 +8,11 @@ import HudPanel from './HudPanel.vue'
 import StatusDot from './StatusDot.vue'
 import ThemeSwitcher from './ThemeSwitcher.vue'
 
+const TAG_COLORS = [
+  '#ffb700', '#22d3ee', '#ec4899', '#4ade80', '#a78bfa',
+  '#fb923c', '#2dd4bf', '#f87171', '#60a5fa', '#a3e635',
+]
+
 const router = useRouter()
 const route = useRoute()
 const categories = ref([])
@@ -15,6 +20,17 @@ const tags = ref([])
 const totalPosts = ref(0)
 const searchQ = ref('')
 const now = ref(new Date())
+
+const tagCloud = computed(() => {
+  if (!tags.value.length) return []
+  const sizeClasses = ['text-xs', 'text-base', 'text-xl', 'text-2xl', 'text-3xl']
+  const max = Math.max(...tags.value.map(t => t.post_count ?? 0), 1)
+  return tags.value.map(t => ({
+    ...t,
+    sizeClass: sizeClasses[Math.round(((t.post_count ?? 0) / max) * 4)],
+    color: TAG_COLORS[t.id % TAG_COLORS.length],
+  }))
+})
 
 const isArticle = computed(() => route.path.startsWith('/posts/'))
 const tocVisible = ref(true)
@@ -172,6 +188,23 @@ function doSearch() {
               >
                 {{ tag.name }}
               </router-link>
+            </div>
+          </HudPanel>
+
+          <HudPanel
+            v-if="tagCloud.length"
+            label="// TAG HEAT"
+            :status="`${String(tagCloud.length).padStart(2, '0')} TAGS`"
+          >
+            <div class="flex flex-wrap gap-2 leading-relaxed">
+              <router-link
+                v-for="tag in tagCloud"
+                :key="tag.id"
+                :to="`/tag/${tag.slug}`"
+                class="font-mono no-underline transition-opacity hover:opacity-70"
+                :class="tag.sizeClass"
+                :style="{ color: tag.color }"
+              >{{ tag.name }}</router-link>
             </div>
           </HudPanel>
 

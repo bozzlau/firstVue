@@ -1,8 +1,9 @@
 from datetime import datetime, timezone
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from app.models.post import Category, Comment, Post, PostLog, Tag
+from app.models.post import Category, Comment, Post, PostLog, Tag, post_tags
 from app.schemas.blog import (
     CategoryCreate, CategoryUpdate,
     CommentCreate, CommentUpdate,
@@ -66,7 +67,16 @@ def delete_category(db: Session, category_id: int) -> bool:
 # ── Tag ───────────────────────────────────────────────────────────────────────
 
 def get_tags(db: Session) -> list[Tag]:
-    return db.query(Tag).order_by(Tag.name).all()
+    rows = (
+        db.query(Tag, func.count(post_tags.c.post_id).label("post_count"))
+        .outerjoin(post_tags, Tag.id == post_tags.c.tag_id)
+        .group_by(Tag.id)
+        .order_by(Tag.name)
+        .all()
+    )
+    for tag, cnt in rows:
+        tag.post_count = cnt
+    return [tag for tag, _ in rows]
 
 
 def get_tag(db: Session, tag_id: int) -> Tag | None:
