@@ -25,11 +25,19 @@ async function handleLogin() {
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 flex items-center justify-center">
+  <div class="admin-scope min-h-screen bg-[#f6f9fc] flex items-center justify-center px-4">
     <div class="w-full max-w-sm">
-      <h1 class="text-2xl font-semibold text-gray-800 text-center mb-8">博客管理后台</h1>
+      <!-- Card -->
+      <div class="bg-white border border-[#e3e8ef] rounded-[10px] shadow-[0_4px_24px_rgba(0,0,0,0.08)] px-8 py-8">
+        <!-- Logo + Title -->
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-8 h-8 rounded-lg bg-[#635bff] flex items-center justify-center text-white font-bold text-base shrink-0">B</div>
+          <div>
+            <div class="text-base font-semibold text-[#1a1f36]">博客管理后台</div>
+            <div class="text-[12px] text-[#697386]">请使用管理员账号登录</div>
+          </div>
+        </div>
 
-      <el-card shadow="never">
         <el-form :model="form" @submit.prevent="handleLogin" label-position="top">
           <el-form-item label="用户名">
             <el-input v-model="form.username" placeholder="请输入用户名" />
@@ -52,11 +60,16 @@ async function handleLogin() {
             class="mb-4"
           />
 
-          <el-button type="primary" native-type="submit" :loading="loading" class="w-full">
+          <el-button
+            type="primary"
+            native-type="submit"
+            :loading="loading"
+            class="w-full !mt-2"
+          >
             登录
           </el-button>
         </el-form>
-      </el-card>
+      </div>
     </div>
   </div>
 </template>
