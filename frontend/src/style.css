@@ -377,3 +377,37 @@ body {
   border: 1px solid rgb(var(--hud-border-dim));
   border-radius: 0;
 }
+
+/* ================================================================
+ * Admin panel — Stripe-style light theme
+ * Scoped to .admin-scope to avoid bleeding into public blog
+ * ================================================================ */
+.admin-scope {
+  --el-color-primary: #635bff;
+  --el-color-primary-light-3: #8b85ff;
+  --el-color-primary-light-5: #b0acff;
+  --el-color-primary-light-7: #d4d2ff;
+  --el-color-primary-light-8: #e4e3ff;
+  --el-color-primary-light-9: #f0effe;
+  --el-color-primary-dark-2: #5851e8;
+
+  --el-border-color: #e3e8ef;
+  --el-border-color-light: #eef1f6;
+  --el-border-color-lighter: #f0f4f8;
+
+  --el-bg-color: #ffffff;
+  --el-bg-color-page: #f6f9fc;
+  --el-fill-color-light: #f6f9fc;
+  --el-fill-color-blank: #ffffff;
+
+  --el-text-color-primary: #1a1f36;
+  --el-text-color-regular: #1a1f36;
+  --el-text-color-secondary: #697386;
+  --el-text-color-placeholder: #aab7c4;
+
+  --el-border-radius-base: 6px;
+  --el-border-radius-small: 4px;
+
+  --el-box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --el-box-shadow-light: 0 1px 2px rgba(0,0,0,0.04);
+}
