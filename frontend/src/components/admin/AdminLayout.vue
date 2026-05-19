@@ -45,60 +45,109 @@ function logout() {
 </script>
 
 <template>
-  <div class="flex min-h-screen">
+  <div class="admin-scope flex min-h-screen bg-[#f6f9fc]">
+    <!-- Sidebar -->
     <div
-      class="relative shrink-0 flex flex-col"
-      :style="{ width: sidebarWidth + 'px', backgroundColor: '#1e293b' }"
+      class="relative shrink-0 flex flex-col bg-white border-r border-[#e3e8ef]"
+      :style="{ width: sidebarWidth + 'px' }"
     >
-      <div class="text-white text-center py-5 font-semibold text-lg border-b border-slate-700 whitespace-nowrap overflow-hidden">
-        博客管理
-      </div>
-      <el-menu
-        :default-active="route.path"
-        router
-        background-color="#1e293b"
-        text-color="#94a3b8"
-        active-text-color="#ffffff"
-      >
-        <el-menu-item index="/admin/dashboard">仪表盘</el-menu-item>
-        <el-menu-item index="/admin/posts">文章管理</el-menu-item>
-        <el-menu-item index="/admin/categories">分类管理</el-menu-item>
-        <el-menu-item index="/admin/tags">标签管理</el-menu-item>
-        <el-menu-item index="/admin/comments">评论管理</el-menu-item>
-      </el-menu>
-
-      <div class="mt-auto border-t border-slate-700 p-3">
-        <el-button text class="w-full !text-slate-400 hover:!text-white" @click="logout">退出登录</el-button>
+      <!-- Logo -->
+      <div class="flex items-center gap-3 px-5 py-4 border-b border-[#e3e8ef]">
+        <div class="w-7 h-7 rounded-md bg-[#635bff] flex items-center justify-center text-white text-sm font-bold shrink-0">B</div>
+        <div class="overflow-hidden">
+          <div class="text-sm font-semibold text-[#1a1f36] whitespace-nowrap">博客管理</div>
+          <div class="text-[11px] text-[#697386] whitespace-nowrap">Admin Dashboard</div>
+        </div>
       </div>
 
+      <!-- Nav -->
+      <nav class="flex-1 px-2.5 py-3 space-y-0.5">
+        <div class="px-2.5 pt-2 pb-1 text-[11px] font-semibold text-[#697386] uppercase tracking-wider">概览</div>
+        <router-link
+          to="/admin/dashboard"
+          class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13.5px] transition-colors"
+          :class="route.path === '/admin/dashboard'
+            ? 'bg-[#f0effe] text-[#635bff] font-medium'
+            : 'text-[#697386] hover:bg-[#f6f9fc] hover:text-[#1a1f36]'"
+        >
+          <span class="text-base leading-none">⊞</span>
+          <span>仪表盘</span>
+        </router-link>
+
+        <div class="px-2.5 pt-3 pb-1 text-[11px] font-semibold text-[#697386] uppercase tracking-wider">内容</div>
+        <router-link
+          to="/admin/posts"
+          class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13.5px] transition-colors"
+          :class="route.path.startsWith('/admin/posts')
+            ? 'bg-[#f0effe] text-[#635bff] font-medium'
+            : 'text-[#697386] hover:bg-[#f6f9fc] hover:text-[#1a1f36]'"
+        >
+          <span class="text-base leading-none">≡</span>
+          <span>文章管理</span>
+        </router-link>
+        <router-link
+          to="/admin/categories"
+          class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13.5px] transition-colors"
+          :class="route.path === '/admin/categories'
+            ? 'bg-[#f0effe] text-[#635bff] font-medium'
+            : 'text-[#697386] hover:bg-[#f6f9fc] hover:text-[#1a1f36]'"
+        >
+          <span class="text-base leading-none">⊟</span>
+          <span>分类管理</span>
+        </router-link>
+        <router-link
+          to="/admin/tags"
+          class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13.5px] transition-colors"
+          :class="route.path === '/admin/tags'
+            ? 'bg-[#f0effe] text-[#635bff] font-medium'
+            : 'text-[#697386] hover:bg-[#f6f9fc] hover:text-[#1a1f36]'"
+        >
+          <span class="text-base leading-none">⊞</span>
+          <span>标签管理</span>
+        </router-link>
+        <router-link
+          to="/admin/comments"
+          class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md text-[13.5px] transition-colors"
+          :class="route.path === '/admin/comments'
+            ? 'bg-[#f0effe] text-[#635bff] font-medium'
+            : 'text-[#697386] hover:bg-[#f6f9fc] hover:text-[#1a1f36]'"
+        >
+          <span class="text-base leading-none">✉</span>
+          <span>评论管理</span>
+        </router-link>
+      </nav>
+
+      <!-- User / Logout -->
+      <div class="border-t border-[#e3e8ef] px-2.5 py-3">
+        <div class="flex items-center gap-2.5 px-2.5 py-1.5 rounded-md hover:bg-[#f6f9fc] cursor-pointer group" @click="logout">
+          <div class="w-7 h-7 rounded-full bg-gradient-to-br from-[#635bff] to-[#a78bfa] flex items-center justify-center text-white text-xs font-semibold shrink-0">A</div>
+          <div class="flex-1 overflow-hidden">
+            <div class="text-[13px] font-medium text-[#1a1f36] whitespace-nowrap">admin</div>
+            <div class="text-[11px] text-[#697386]">管理员</div>
+          </div>
+          <span class="text-[#697386] group-hover:text-[#e53e3e] transition-colors text-sm">⏻</span>
+        </div>
+      </div>
+
+      <!-- Drag handle -->
       <div
         class="absolute top-0 right-0 w-1 h-full cursor-col-resize group"
         @mousedown="startDrag"
       >
         <div
           class="w-full h-full transition-colors"
-          :class="isDragging ? 'bg-blue-400' : 'bg-transparent group-hover:bg-blue-400'"
+          :class="isDragging ? 'bg-[#635bff]' : 'bg-transparent group-hover:bg-[#635bff]/30'"
         />
       </div>
     </div>
 
-    <div class="flex-1 bg-gray-50 p-6 overflow-auto min-w-0">
+    <!-- Main -->
+    <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
       <RouterView />
     </div>
   </div>
 </template>
 
 <style scoped>
-:deep(.el-menu-item.is-active) {
-  background-color: #334155 !important;
-  border-left: none !important;
-}
-
-:deep(.el-menu-item:hover) {
-  background-color: #273549 !important;
-}
-
-:deep(.el-menu) {
-  border-right: none;
-}
+a { text-decoration: none; }
 </style>
