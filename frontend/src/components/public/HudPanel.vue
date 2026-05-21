@@ -7,15 +7,12 @@ defineProps({
 </script>
 
 <template>
-  <section class="hud-frame">
-    <header
-      v-if="label || status"
-      class="flex items-center justify-between border-b border-hud-borderDim h-7 px-3 bg-hud-amber/5"
-    >
-      <span class="font-mono text-[11px] uppercase tracking-[0.18em] text-hud-amber">{{ label }}</span>
-      <span v-if="status" class="font-mono text-[10px] uppercase tracking-wider text-hud-textMuted">{{ status }}</span>
+  <section class="ed-panel">
+    <header v-if="label || status" class="flex items-center justify-between mb-4">
+      <span class="ed-panel-title">{{ label }}</span>
+      <span v-if="status" class="font-mono text-[10px] uppercase tracking-wider text-ed-muted">{{ status }}</span>
     </header>
-    <div :class="noPad ? '' : 'p-4'">
+    <div :class="noPad ? '-mx-5 -mb-5' : ''">
       <slot />
     </div>
   </section>
