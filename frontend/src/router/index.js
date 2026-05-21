@@ -3,6 +3,12 @@ import { useAuthStore } from '../stores/auth'
 
 const router = createRouter({
   history: createWebHistory(),
+  scrollBehavior(to, from, savedPosition) {
+    if (savedPosition) {
+      return savedPosition
+    }
+    return { top: 0 }
+  },
   routes: [
     // ── 公开博客（带侧边栏布局）──────────────────────────────────────────────
     {

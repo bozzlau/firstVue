@@ -27,40 +27,40 @@ function close() {
 </script>
 
 <template>
-  <section class="hud-frame">
-    <header class="flex items-center justify-between border-b border-hud-borderDim h-7 px-3 bg-hud-amber/5">
-      <span class="font-mono text-xs uppercase tracking-[0.18em] text-hud-amber">// CONTENTS</span>
+  <section class="ed-panel">
+    <header class="flex items-center justify-between mb-3">
+      <span class="ed-panel-title">目录</span>
       <button
         type="button"
-        class="font-mono text-xs text-hud-textMuted hover:text-hud-amber transition-colors leading-none"
+        class="text-xs text-ed-muted hover:text-ed-accent transition-colors leading-none"
         aria-label="hide TOC"
         @click="close"
       >✕</button>
     </header>
-    <nav class="py-2 max-h-[calc(100vh-9rem)] overflow-y-auto">
+    <nav class="max-h-[calc(100vh-9rem)] overflow-y-auto -mx-1">
       <ul>
         <li v-for="item in itemsWithLabel" :key="item.id">
           <button
             type="button"
-            class="relative w-full text-left flex items-start gap-2 py-1.5 transition-colors"
+            class="relative w-full text-left flex items-start gap-2 py-1.5 px-2 rounded-lg transition-colors"
             :class="[
-              item.depth === 3 ? 'pl-7 pr-3' : 'pl-3 pr-3',
+              item.depth === 3 ? 'pl-6' : 'pl-2',
               activeId === item.id
-                ? 'text-hud-amber bg-hud-amber/10'
-                : 'text-hud-textDim hover:text-hud-amberSoft hover:bg-hud-amber/5',
+                ? 'text-ed-accent bg-ed-accent/8'
+                : 'text-ed-muted hover:text-ed-fg hover:bg-ed-surface2',
             ]"
             @click="jump(item)"
           >
             <span
               v-if="activeId === item.id"
-              class="absolute left-0 top-0 bottom-0 w-[2px] bg-hud-amber"
+              class="absolute left-0 top-1 bottom-1 w-0.5 rounded-full bg-ed-accent"
               aria-hidden="true"
             />
             <span
-              class="font-mono text-[11px] shrink-0 mt-[3px] w-5"
-              :class="activeId === item.id ? 'text-hud-amber' : 'text-hud-textMuted'"
+              class="font-mono text-[10px] shrink-0 mt-[3px] w-5"
+              :class="activeId === item.id ? 'text-ed-accent' : 'text-ed-muted'"
             >{{ item.label }}</span>
-            <span class="text-sm leading-relaxed truncate">{{ item.text }}</span>
+            <span class="text-sm leading-relaxed truncate font-sans">{{ item.text }}</span>
           </button>
         </li>
       </ul>

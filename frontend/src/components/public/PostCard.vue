@@ -9,73 +9,86 @@ const props = defineProps({
 
 const router = useRouter()
 
-const code = computed(() => {
-  const n = props.index != null ? props.index : props.post.id
-  return String(n).padStart(3, '0')
-})
-
 const dateStr = computed(() => {
   const d = new Date(props.post.created_at)
   const pad = (n) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}`
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 })
 </script>
 
 <template>
-  <article
-    class="hud-frame bg-hud-surface cursor-pointer group transition-colors hover:bg-hud-surfaceAlt animate-hud-fade-up"
-    @click="router.push(`/posts/${post.slug}`)"
-  >
-    <span class="hud-glow-bar" />
-    <div class="flex items-center justify-between gap-3 px-4 h-7 border-b border-hud-borderDim bg-hud-amber/[0.04]">
-      <div class="flex items-center gap-3 font-mono text-[11px] uppercase tracking-wider min-w-0">
-        <span class="text-hud-amber">[{{ code }}]</span>
-        <span class="text-hud-textMuted">◆</span>
-        <span class="text-hud-textDim">{{ dateStr }}</span>
-        <span class="text-hud-textMuted">·</span>
-        <span class="text-hud-textDim">▸ {{ post.views }}</span>
-      </div>
-      <span
-        v-if="post.category"
-        class="font-mono text-[10px] uppercase tracking-wider text-hud-amber border border-hud-amberDim/60 px-1.5 py-0.5 shrink-0"
-      >
-        {{ post.category.name }}
-      </span>
+  <article class="article-row" @click="router.push(`/posts/${post.slug}`)">
+    <div class="article-row-tag">{{ post.tags?.[0]?.name || post.category?.name || '' }}</div>
+    <div class="article-row-body">
+      <div class="article-row-title">{{ post.title }}</div>
+      <div v-if="post.summary" class="article-row-excerpt">{{ post.summary }}</div>
     </div>
-
-    <div class="flex gap-4 p-4">
-      <div class="flex-1 min-w-0">
-        <h2 class="font-display text-xl font-semibold text-hud-text leading-snug mb-2 line-clamp-2 group-hover:text-hud-amberSoft transition-colors">
-          {{ post.title }}
-        </h2>
-        <p
-          v-if="post.summary"
-          class="text-sm text-hud-textDim leading-relaxed line-clamp-2"
-        >
-          {{ post.summary }}
-        </p>
-      </div>
-
-      <img
-        v-if="post.cover_image"
-        :src="post.cover_image"
-        :alt="post.title"
-        class="w-24 h-20 object-cover border border-hud-borderDim shrink-0 grayscale group-hover:grayscale-0 transition-all"
-      />
-    </div>
-
-    <div class="flex items-center gap-2 px-4 pb-3">
-      <div class="flex-1 h-px bg-gradient-to-r from-hud-amber/40 via-hud-amberDim/40 to-transparent" />
-      <div v-if="post.tags?.length" class="flex items-center gap-3 font-mono text-[10px] uppercase tracking-wider text-hud-textMuted shrink-0">
-        <span
-          v-for="(tag, i) in post.tags"
-          :key="tag.id"
-          class="flex items-center gap-3"
-        >
-          <span class="hover:text-hud-amber transition-colors">{{ tag.name }}</span>
-          <span v-if="i < post.tags.length - 1" class="text-hud-borderDim">·</span>
-        </span>
-      </div>
+    <div class="article-row-meta">
+      <span>{{ dateStr }}</span>
     </div>
   </article>
 </template>
+
+<style scoped>
+.article-row {
+  display: grid;
+  grid-template-columns: 80px 1fr auto;
+  gap: 0 20px;
+  align-items: baseline;
+  padding: 22px 0;
+  border-bottom: 1px solid rgb(var(--ed-border));
+  cursor: pointer;
+  transition: all 0.18s;
+  position: relative;
+}
+.article-row::before {
+  content: '';
+  position: absolute;
+  left: -16px;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(180deg, rgb(var(--ed-accent)), rgb(var(--ed-accent2)));
+  border-radius: 2px;
+  opacity: 0;
+  transition: opacity 0.18s;
+}
+.article-row:hover::before { opacity: 1; }
+.article-row:first-child { border-top: 1px solid rgb(var(--ed-border)); }
+.article-row:hover { padding-left: 8px; }
+.article-row-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  letter-spacing: 0.1em;
+  color: rgb(var(--ed-muted));
+  text-transform: uppercase;
+  padding-top: 3px;
+  transition: color 0.18s;
+}
+.article-row:hover .article-row-tag { color: rgb(var(--ed-accent)); }
+.article-row-body { display: flex; flex-direction: column; gap: 5px; }
+.article-row-title {
+  font-family: 'Iowan Old Style', Charter, Georgia, serif;
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: rgb(var(--ed-fg));
+  transition: color 0.18s;
+}
+.article-row:hover .article-row-title { color: rgb(var(--ed-accent)); }
+.article-row-excerpt { font-size: 15px; color: rgb(var(--ed-muted)); line-height: 1.6; }
+.article-row-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: rgb(var(--ed-muted));
+  text-align: right;
+  white-space: nowrap;
+  padding-top: 3px;
+}
+@media (max-width: 600px) {
+  .article-row { grid-template-columns: 60px 1fr; }
+  .article-row-meta { display: none; }
+  .article-row-title { font-size: 18px; }
+}
+</style>

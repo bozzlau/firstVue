@@ -4,6 +4,7 @@ import router from './router'
 import App from './App.vue'
 import { useThemeStore } from './stores/theme'
 import './style.css'
+import 'highlight.js/styles/atom-one-dark.css'
 
 const app = createApp(App)
 

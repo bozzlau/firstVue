@@ -23,6 +23,7 @@ class CategoryUpdate(BaseModel):
 
 class CategoryOut(CategoryBase):
     id: int
+    post_count: int = 0
 
     model_config = {"from_attributes": True}
 

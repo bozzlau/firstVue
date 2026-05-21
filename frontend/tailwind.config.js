@@ -4,43 +4,42 @@ export default {
   theme: {
     extend: {
       colors: {
-        hud: {
-          bg: 'rgb(var(--hud-bg) / <alpha-value>)',
-          surface: 'rgb(var(--hud-surface) / <alpha-value>)',
-          surfaceAlt: 'rgb(var(--hud-surface-alt) / <alpha-value>)',
-          border: 'rgb(var(--hud-border) / <alpha-value>)',
-          borderDim: 'rgb(var(--hud-border-dim) / <alpha-value>)',
-          amber: 'rgb(var(--hud-amber) / <alpha-value>)',
-          amberDim: 'rgb(var(--hud-amber-dim) / <alpha-value>)',
-          amberSoft: 'rgb(var(--hud-amber-soft) / <alpha-value>)',
-          warn: '#ff3344',
-          text: 'rgb(var(--hud-text) / <alpha-value>)',
-          textDim: 'rgb(var(--hud-text-dim) / <alpha-value>)',
-          textMuted: 'rgb(var(--hud-text-muted) / <alpha-value>)',
+        ed: {
+          bg:      'rgb(var(--ed-bg) / <alpha-value>)',
+          surface: 'rgb(var(--ed-surface) / <alpha-value>)',
+          surface2:'rgb(var(--ed-surface2) / <alpha-value>)',
+          border:  'rgb(var(--ed-border) / <alpha-value>)',
+          fg:      'rgb(var(--ed-fg) / <alpha-value>)',
+          muted:   'rgb(var(--ed-muted) / <alpha-value>)',
+          accent:  'rgb(var(--ed-accent) / <alpha-value>)',
+          accent2: 'rgb(var(--ed-accent2) / <alpha-value>)',
+          accent3: 'rgb(var(--ed-accent3) / <alpha-value>)',
         },
       },
       fontFamily: {
         display: ['"Space Grotesk"', 'Inter', 'system-ui', 'sans-serif'],
+        serif: ['"Iowan Old Style"', 'Charter', 'Georgia', 'serif'],
         mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
         sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', '"PingFang SC"', '"Hiragino Sans GB"', '"Microsoft YaHei"', 'sans-serif'],
       },
       animation: {
-        'hud-pulse': 'hud-pulse 1.6s ease-in-out infinite',
-        'hud-fade-up': 'hud-fade-up 0.4s ease-out both',
-        'hud-blink': 'hud-blink 1s steps(2, start) infinite',
+        'blob-float': 'blob-float 8s ease-in-out infinite',
+        'blob-morph': 'blob-morph 10s ease-in-out infinite',
+        'fade-up': 'fade-up 0.5s ease-out both',
       },
       keyframes: {
-        'hud-pulse': {
-          '0%, 100%': { opacity: '1', transform: 'scale(1)' },
-          '50%': { opacity: '0.4', transform: 'scale(1.4)' },
+        'blob-float': {
+          '0%, 100%': { transform: 'translate(0, 0) scale(1)' },
+          '33%': { transform: 'translate(20px, -20px) scale(1.05)' },
+          '66%': { transform: 'translate(-15px, 10px) scale(0.97)' },
         },
-        'hud-fade-up': {
-          '0%': { opacity: '0', transform: 'translateY(6px)' },
+        'blob-morph': {
+          '0%, 100%': { borderRadius: '60% 40% 30% 70% / 60% 30% 70% 40%' },
+          '50%': { borderRadius: '30% 60% 70% 40% / 50% 60% 30% 60%' },
+        },
+        'fade-up': {
+          '0%': { opacity: '0', transform: 'translateY(20px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
-        },
-        'hud-blink': {
-          '0%, 100%': { opacity: '1' },
-          '50%': { opacity: '0' },
         },
       },
     },

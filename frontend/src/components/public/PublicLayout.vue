@@ -1,75 +1,91 @@
 <script setup>
-import { ref, onMounted, onUnmounted, computed, provide } from 'vue'
+import { ref, onMounted, onUnmounted, computed, provide, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { getCategories } from '../../api/categories'
 import { getTags } from '../../api/tags'
+import { getCategories } from '../../api/categories'
 import { getPosts } from '../../api/posts'
-import HudPanel from './HudPanel.vue'
-import StatusDot from './StatusDot.vue'
-import ThemeSwitcher from './ThemeSwitcher.vue'
-
-const TAG_COLORS = [
-  '#ffb700', '#22d3ee', '#ec4899', '#4ade80', '#a78bfa',
-  '#fb923c', '#2dd4bf', '#f87171', '#60a5fa', '#a3e635',
-]
 
 const router = useRouter()
 const route = useRoute()
-const categories = ref([])
 const tags = ref([])
+const categories = ref([])
 const totalPosts = ref(0)
 const searchQ = ref('')
-const now = ref(new Date())
-
-const tagCloud = computed(() => {
-  if (!tags.value.length) return []
-  const sizeClasses = ['text-xs', 'text-base', 'text-xl', 'text-2xl', 'text-3xl']
-  const max = Math.max(...tags.value.map(t => t.post_count ?? 0), 1)
-  return tags.value.map(t => ({
-    ...t,
-    sizeClass: sizeClasses[Math.round(((t.post_count ?? 0) / max) * 4)],
-    color: TAG_COLORS[t.id % TAG_COLORS.length],
-  }))
-})
 
 const isArticle = computed(() => route.path.startsWith('/posts/'))
 const tocVisible = ref(true)
 provide('tocVisible', tocVisible)
+provide('tags', tags)
+provide('categories', categories)
+provide('totalPosts', totalPosts)
 
-const containerClass = computed(() =>
-  isArticle.value && tocVisible.value
-    ? 'mx-auto px-4 md:px-6 max-w-6xl xl:w-[90%] xl:max-w-[1600px]'
-    : 'mx-auto px-4 md:px-6 max-w-6xl',
+const containerClass = 'mx-auto px-10 max-w-[1200px]'
+const contentClass = computed(() =>
+  isArticle.value ? 'mx-auto px-6 max-w-[1440px]' : 'mx-auto px-10 max-w-[1200px]'
 )
 
-const gridInner = computed(() =>
-  isArticle.value && tocVisible.value
-    ? 'py-8 md:py-10 grid gap-8 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_240px] xl:grid-cols-[200px_minmax(0,1fr)_240px]'
-    : 'py-8 md:py-10 grid gap-8 grid-cols-1 lg:grid-cols-[minmax(0,1fr)_240px]',
-)
-
-const clock = computed(() => {
-  const d = now.value
-  const pad = (n) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`
+const tagCloud = computed(() => {
+  if (!tags.value.length) return []
+  const counts = tags.value.map(t => t.post_count ?? 0)
+  const maxC = Math.max(...counts, 1)
+  const minC = Math.min(...counts, 0)
+  return tags.value.map(t => {
+    const c = t.post_count ?? 0
+    const ratio = maxC > minC
+      ? (Math.log(c + 1) - Math.log(minC + 1)) / (Math.log(maxC + 1) - Math.log(minC + 1))
+      : 0
+    const size = 11 + ratio * 14
+    const r = Math.round(232 * ratio + 138 * (1 - ratio))
+    const g = Math.round(93 * ratio + 130 * (1 - ratio))
+    const b = Math.round(58 * ratio + 120 * (1 - ratio))
+    const alpha = 0.5 + ratio * 0.5
+    return { ...t, size, color: `rgba(${r},${g},${b},${alpha})` }
+  })
 })
 
-let timer = null
+const gridInner = computed(() => {
+  if (isArticle.value) {
+    return 'py-8 md:py-10 grid gap-8 grid-cols-1 xl:grid-cols-[220px_minmax(0,1fr)_260px]'
+  }
+  return 'pb-8 md:pb-10'
+})
+
+function onMouseMove(e) {
+  document.documentElement.style.setProperty('--cursor-x', e.clientX + 'px')
+  document.documentElement.style.setProperty('--cursor-y', e.clientY + 'px')
+}
+
+let revealObserver = null
 
 onMounted(async () => {
-  timer = setInterval(() => { now.value = new Date() }, 1000)
-  const [cats, tgs, postData] = await Promise.all([
-    getCategories(),
+  window.addEventListener('mousemove', onMouseMove)
+  const [tgs, cats, postData] = await Promise.all([
     getTags(),
+    getCategories(),
     getPosts({ page: 1, page_size: 1 }),
   ])
-  categories.value = cats
   tags.value = tgs
+  categories.value = cats
   totalPosts.value = postData.total || 0
+  revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible')
+        revealObserver.unobserve(e.target)
+      }
+    })
+  }, { threshold: 0.1 })
+  document.querySelectorAll('.reveal').forEach(el => revealObserver.observe(el))
+})
+
+watch(route, async () => {
+  await nextTick()
+  document.querySelectorAll('.reveal:not(.visible)').forEach(el => revealObserver?.observe(el))
 })
 
 onUnmounted(() => {
-  if (timer) clearInterval(timer)
+  window.removeEventListener('mousemove', onMouseMove)
+  if (revealObserver) revealObserver.disconnect()
 })
 
 function doSearch() {
@@ -80,141 +96,112 @@ function doSearch() {
 </script>
 
 <template>
-  <div class="hud-grid-bg min-h-screen text-hud-text">
-    <nav class="sticky top-0 z-20 backdrop-blur bg-hud-bg/85 border-b border-hud-border">
-      <div :class="containerClass" class="h-12 flex items-center gap-6">
-        <router-link to="/" class="flex items-center gap-2 no-underline shrink-0">
-          <span class="font-mono text-hud-amber tracking-widest">▮▮▮</span>
-          <span class="font-display font-bold tracking-wider text-hud-text text-sm">BLOG.SYS</span>
-          <span class="font-mono text-[10px] text-hud-textMuted">v1.0</span>
-        </router-link>
+  <div class="min-h-screen bg-ed-bg flex flex-col">
+    <div class="cursor-glow" />
 
-        <div class="hidden md:flex items-center gap-5 text-xs">
-          <StatusDot label="ONLINE" />
-          <span class="font-mono uppercase tracking-wider text-hud-textDim">
-            <span class="text-hud-amber">{{ String(totalPosts).padStart(3, '0') }}</span> POSTS
-          </span>
-          <span class="font-mono uppercase tracking-wider text-hud-textMuted">{{ clock }}</span>
+    <!-- Nav -->
+    <nav class="sticky top-0 z-20 border-b border-ed-border"
+         style="background: rgba(249,248,246,0.88); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);">
+      <div :class="containerClass" class="h-14 flex items-center gap-8">
+        <router-link to="/" class="font-serif text-lg font-bold text-ed-fg no-underline mr-auto shrink-0">
+          生如夏花<span style="background: linear-gradient(135deg, rgb(var(--ed-accent)), rgb(var(--ed-accent2))); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">.</span>
+        </router-link>
+        <div class="hidden md:flex items-center gap-6">
+          <router-link to="/" class="text-sm text-ed-muted hover:text-ed-fg transition-colors no-underline">文章</router-link>
+          <router-link to="/about" class="text-sm text-ed-muted hover:text-ed-fg transition-colors no-underline">关于</router-link>
         </div>
-
-        <div class="flex-1" />
-
-        <form @submit.prevent="doSearch" class="flex items-center gap-2 group">
-          <span class="font-mono text-hud-amber text-lg leading-none">⌕</span>
-          <input
-            v-model="searchQ"
-            type="text"
-            placeholder="search ____"
-            class="hud-input w-44"
-          />
+        <form @submit.prevent="doSearch" class="flex items-center gap-2">
+          <input v-model="searchQ" type="text" placeholder="搜索..." class="ed-input w-36 text-sm" />
         </form>
-
-        <ThemeSwitcher />
-
-        <router-link
-          to="/about"
-          class="hud-tag no-underline"
-          :class="route.path === '/about' ? 'border-hud-amber text-hud-amber' : ''"
-        >
-          /ABOUT
-        </router-link>
       </div>
     </nav>
 
-    <button
-      v-if="isArticle && !tocVisible"
-      type="button"
-      class="hidden xl:flex fixed left-4 top-20 z-30 hud-tag bg-hud-surface items-center gap-1.5"
-      @click="tocVisible = true"
-    >
-      <span class="text-hud-amber">◀</span>
-      <span>TOC</span>
-    </button>
-
-    <div :class="containerClass">
+    <!-- Main content -->
+    <div class="flex-1" :class="isArticle ? contentClass : containerClass">
       <div :class="gridInner">
-        <aside
-          v-if="isArticle && tocVisible"
-          class="hidden xl:block self-start sticky top-20"
-        >
-          <div id="toc-mount" />
+        <aside v-if="isArticle" class="hidden xl:block self-start sticky top-20">
+          <div v-show="tocVisible" id="toc-mount" />
+          <button v-show="!tocVisible" type="button"
+            class="ed-tag flex items-center gap-1.5 bg-ed-surface w-full justify-center"
+            @click="tocVisible = true">
+            目录 ▶
+          </button>
         </aside>
 
         <main class="min-w-0">
           <RouterView />
         </main>
 
-        <aside class="hidden lg:block space-y-5 self-start sticky top-20">
-          <HudPanel
-            v-if="categories.length"
-            label="// CATEGORY"
-            :status="`${String(categories.length).padStart(2, '0')} ITEMS`"
-            no-pad
-          >
-            <ul class="divide-y divide-hud-borderDim">
-              <li v-for="(cat, i) in categories" :key="cat.id">
+        <!-- Right sidebar: categories + tag heatmap (article pages only) -->
+        <aside v-if="isArticle" class="hidden xl:block self-start sticky top-20 space-y-4">
+          <!-- Categories -->
+          <div v-if="categories.length" class="ed-panel">
+            <div class="ed-panel-title">分类</div>
+            <ul class="space-y-1">
+              <li v-for="cat in categories" :key="cat.id">
                 <router-link
                   :to="`/category/${cat.slug}`"
-                  class="flex items-center justify-between px-3 py-2 no-underline transition-colors hover:bg-hud-amber/5 group"
-                  :class="route.params.slug === cat.slug && route.path.startsWith('/category') ? 'bg-hud-amber/10' : ''"
+                  class="flex items-center justify-between py-1.5 px-2 rounded-lg text-sm transition-colors no-underline"
+                  :class="$route.params.slug === cat.slug && $route.path.startsWith('/category')
+                    ? 'text-ed-accent bg-ed-accent/8'
+                    : 'text-ed-muted hover:text-ed-fg hover:bg-ed-surface2'"
                 >
-                  <span class="flex items-center gap-2 min-w-0">
-                    <span class="font-mono text-[11px] text-hud-textMuted">{{ String(i + 1).padStart(2, '0') }}</span>
-                    <span
-                      class="text-base truncate"
-                      :class="route.params.slug === cat.slug && route.path.startsWith('/category')
-                        ? 'text-hud-amber'
-                        : 'text-hud-text group-hover:text-hud-amberSoft'"
-                    >{{ cat.name }}</span>
-                  </span>
-                  <span class="font-mono text-[11px] text-hud-textMuted group-hover:text-hud-amber">▸</span>
+                  <span>{{ cat.name }}</span>
+                  <span class="font-mono text-[12px] opacity-60">{{ cat.post_count ?? 0 }}</span>
                 </router-link>
               </li>
             </ul>
-          </HudPanel>
+          </div>
 
-          <HudPanel
-            v-if="tags.length"
-            label="// TAGS"
-            :status="`${String(tags.length).padStart(2, '0')} TAGS`"
-          >
-            <div class="flex flex-wrap gap-1.5">
+          <!-- Tag heatmap -->
+          <div v-if="tagCloud.length" class="ed-panel">
+            <div class="ed-panel-title">标签热度</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px 8px;align-items:baseline;line-height:1.4;">
               <router-link
-                v-for="tag in tags"
-                :key="tag.id"
+                v-for="tag in tagCloud" :key="tag.id"
                 :to="`/tag/${tag.slug}`"
-                class="hud-tag text-xs"
-                :class="route.params.slug === tag.slug && route.path.startsWith('/tag') ? 'border-hud-amber text-hud-amber bg-hud-amber/10' : ''"
-              >
-                {{ tag.name }}
-              </router-link>
-            </div>
-          </HudPanel>
-
-          <HudPanel
-            v-if="tagCloud.length"
-            label="// TAG HEAT"
-            :status="`${String(tagCloud.length).padStart(2, '0')} TAGS`"
-          >
-            <div class="flex flex-wrap gap-2 leading-relaxed">
-              <router-link
-                v-for="tag in tagCloud"
-                :key="tag.id"
-                :to="`/tag/${tag.slug}`"
-                class="font-mono no-underline transition-opacity hover:opacity-70"
-                :class="tag.sizeClass"
-                :style="{ color: tag.color }"
+                class="no-underline transition-opacity hover:opacity-80"
+                :style="{ fontSize: tag.size + 'px', color: tag.color }"
+                :title="`${tag.name} · ${tag.post_count ?? 0} 篇`"
               >{{ tag.name }}</router-link>
             </div>
-          </HudPanel>
-
-          <div class="font-mono text-[11px] text-hud-textMuted leading-relaxed px-1">
-            <div>SYS // BLOG.SYS v1.0</div>
-            <div>UPLINK // <span class="text-hud-amber">STABLE</span></div>
-            <div>SECURE // <span class="text-hud-amber">[OK]</span></div>
           </div>
         </aside>
       </div>
     </div>
+
+    <!-- Wave divider -->
+    <div style="line-height:0; overflow:hidden;">
+      <svg viewBox="0 0 1440 60" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" style="display:block;width:100%;">
+        <path d="M0,30 C240,60 480,0 720,30 C960,60 1200,0 1440,30 L1440,60 L0,60 Z" fill="rgb(235,230,222)"/>
+      </svg>
+    </div>
+
+    <!-- Footer -->
+    <footer style="background: rgb(235,230,222); border-top: 1px solid rgb(var(--ed-border));" class="py-12">
+      <div :class="containerClass" class="flex items-start justify-between flex-wrap gap-8">
+        <div class="flex flex-col gap-2">
+          <div class="font-serif text-xl font-bold" style="color: rgb(var(--ed-fg));">
+            生如夏花<span style="background: linear-gradient(135deg, rgb(var(--ed-accent)), rgb(var(--ed-accent2))); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">.</span>
+          </div>
+          <div class="text-sm max-w-xs" style="color: rgb(var(--ed-muted));">写代码、写文字、写生活。<br>记录技术探索与内心流动。</div>
+          <div class="font-mono text-[10px]" style="color: rgb(var(--ed-muted)); opacity: 0.6;">© {{ new Date().getFullYear() }}</div>
+        </div>
+        <div class="flex gap-3 flex-wrap items-center">
+          <router-link to="/" class="font-mono text-[11px] uppercase tracking-wider no-underline px-3 py-1.5 rounded-full border transition-colors"
+            style="color: rgb(var(--ed-muted)); border-color: rgb(var(--ed-border));"
+            @mouseover="$event.target.style.color='rgb(var(--ed-fg))'; $event.target.style.borderColor='rgb(var(--ed-fg))'"
+            @mouseleave="$event.target.style.color='rgb(var(--ed-muted))'; $event.target.style.borderColor='rgb(var(--ed-border))'">
+            文章
+          </router-link>
+          <router-link to="/about" class="font-mono text-[11px] uppercase tracking-wider no-underline px-3 py-1.5 rounded-full border transition-colors"
+            style="color: rgb(var(--ed-muted)); border-color: rgb(var(--ed-border));"
+            @mouseover="$event.target.style.color='rgb(var(--ed-fg))'; $event.target.style.borderColor='rgb(var(--ed-fg))'"
+            @mouseleave="$event.target.style.color='rgb(var(--ed-muted))'; $event.target.style.borderColor='rgb(var(--ed-border))'">
+            关于
+          </router-link>
+        </div>
+      </div>
+    </footer>
   </div>
 </template>

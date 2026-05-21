@@ -2,6 +2,9 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## 写入文件注意事项
+向文件中写入大段内容会报写入失败错误，应减少单次写入内容，比如分块写文件、改用 patch、减少一次性生成大段代码
+
 ## Project Overview
 
 A personal blog with a FastAPI backend and a Vue 3 frontend (both complete). The backend lives in `backend/`, frontend in `frontend/`, learning notes and specs in `docs/`.
@@ -150,3 +153,13 @@ src/
 - **API base URL**: hardcoded to `http://localhost:8001` in `src/api/client.js` — change there if the backend port changes.
 - **TOC visibility**: `PublicLayout` owns a `tocVisible` ref and `provide`s it to child views. `PostView` injects it to show/hide the TOC column. The layout shifts from 2-column (article + sidebar) to 3-column (TOC + article + sidebar) when on a post page and the screen is wide enough.
 - **Tag cloud**: Sidebar tag cloud cycles through a `TAG_COLORS` array and scales font size by `post_count` — both computed in `PublicLayout`.
+
+## 分支说明
+
+- `master`：HUD 终端风格（暗色，amber accent，多主题切换）
+- `feat/editorial-redesign`：编辑/杂志风格（米白底，橙珊瑚 accent，衬线字体，流体动画）
+  参考设计稿：`/Users/lyb/openDesign/blog/index-fluid-v2.html`
+  实施方案文档：`docs/editorial-redesign-plan.md`
+
+如需切换版本：`git checkout master` 或 `git checkout feat/editorial-redesign`
+如需合并新设计到主线：在 master 上执行 `git merge feat/editorial-redesign`

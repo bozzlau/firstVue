@@ -25,7 +25,16 @@ def _get_tags_by_ids(db: Session, tag_ids: list[int]) -> list[Tag]:
 # ── Category ──────────────────────────────────────────────────────────────────
 
 def get_categories(db: Session) -> list[Category]:
-    return db.query(Category).order_by(Category.name).all()
+    cats = db.query(Category).order_by(Category.name).all()
+    counts = dict(
+        db.query(Post.category_id, func.count(Post.id))
+        .filter(Post.published == True, Post.deleted_at == None)
+        .group_by(Post.category_id)
+        .all()
+    )
+    for cat in cats:
+        cat.post_count = counts.get(cat.id, 0)
+    return cats
 
 
 def get_category(db: Session, category_id: int) -> Category | None:

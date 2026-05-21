@@ -40,44 +40,22 @@ watch(() => route.query.q, (val) => {
 
 <template>
   <div>
-    <section class="hud-frame mb-5">
-      <div class="flex items-center justify-between h-7 px-3 border-b border-hud-borderDim bg-hud-amber/5">
-        <span class="font-mono text-[11px] uppercase tracking-[0.2em] text-hud-amber">// QUERY</span>
-        <span class="font-mono text-[10px] text-hud-textMuted">[ TYPE TO SEARCH ]</span>
-      </div>
-      <form @submit.prevent="doSearch" class="flex items-center gap-3 p-4">
-        <span class="font-mono text-hud-amber text-base">▸</span>
-        <input
-          v-model="q"
-          type="text"
-          placeholder="search keywords ____"
-          class="hud-input flex-1 text-base"
-        />
-        <button type="submit" class="hud-btn">[ EXEC ]</button>
+    <header class="mb-8">
+      <h1 class="font-serif text-3xl font-bold text-ed-fg mb-4">搜索</h1>
+      <form @submit.prevent="doSearch" class="flex items-center gap-3">
+        <input v-model="q" type="text" placeholder="输入关键词..." class="ed-input flex-1 text-base" />
+        <button type="submit" class="ed-btn-primary">搜索 →</button>
       </form>
-    </section>
+    </header>
 
-    <p v-if="q && !loading" class="font-mono text-[11px] uppercase tracking-wider text-hud-textDim mb-4">
-      <span class="text-hud-amber">▸ RESULT</span>
-      <span class="mx-2 text-hud-textMuted">·</span>
-      <span class="text-hud-amberSoft">"{{ q }}"</span>
-      <span class="mx-2 text-hud-textMuted">·</span>
-      <span class="text-hud-amber">{{ String(total).padStart(3, '0') }}</span> HITS
-    </p>
+    <div v-if="q && !loading" class="mb-6 text-sm text-ed-muted">
+      "<span class="text-ed-fg font-medium">{{ q }}</span>" 的搜索结果，共 <span class="text-ed-accent font-medium">{{ total }}</span> 篇
+    </div>
 
-    <div v-if="loading" class="text-center py-16 font-mono text-xs uppercase tracking-widest text-hud-textDim">
-      [ SCANNING ▮▮▮ ]
-    </div>
-    <div v-else-if="posts.length === 0 && q" class="text-center py-16 font-mono text-xs uppercase tracking-widest text-hud-textMuted">
-      // NO_MATCH
-    </div>
-    <div v-else class="space-y-3">
-      <PostCard
-        v-for="(post, i) in posts"
-        :key="post.id"
-        :post="post"
-        :index="i + 1"
-      />
+    <div v-if="loading" class="text-center py-16 text-ed-muted text-sm" style="min-height: calc(100vh - 56px);">搜索中...</div>
+    <div v-else-if="posts.length === 0 && q" class="text-center py-16 text-ed-muted text-sm">未找到相关文章</div>
+    <div v-else>
+      <PostCard v-for="(post, i) in posts" :key="post.id" :post="post" :index="i + 1" />
     </div>
   </div>
 </template>
